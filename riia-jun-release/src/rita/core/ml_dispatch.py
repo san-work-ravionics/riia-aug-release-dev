@@ -123,6 +123,7 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
             train_agent_v2 as train_agent,
             train_best_of_n_v2 as train_best_of_n,
             run_episode_v2 as run_episode,
+            temporal_split,
         )
 
     # ── 1. Load OHLCV data ────────────────────────────────────────────────────
@@ -135,10 +136,14 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     df = calculate_indicators(df)
     log.info("ml_dispatch.indicators_computed", rows=len(df))
 
-    # ── 3. Train / validation split (80 / 20 by date) ─────────────────────────
-    split_idx = int(len(df) * 0.8)
-    train_df = df.iloc[:split_idx]
-    val_df   = df.iloc[split_idx:]
+    # ── 3. Train / validation (/ test) split ────────────────────────────────────
+    test_df = None
+    if _is_v2:
+        train_df, val_df, test_df = temporal_split(df)
+    else:
+        split_idx = int(len(df) * 0.8)
+        train_df = df.iloc[:split_idx]
+        val_df   = df.iloc[split_idx:]
 
     # ── 4. Train ──────────────────────────────────────────────────────────────
     model_name = f"{config.model_version}_{config.run_id[:8]}"
@@ -181,8 +186,9 @@ def train(config: TrainingConfig, progress_fn=None) -> TrainingOutcome:
     mdd = 0.0
     total_return = 0.0
     val_trades = 0
+    eval_df = test_df if _is_v2 else val_df
     try:
-        val_result = run_episode(model, val_df)
+        val_result = run_episode(model, eval_df)
         perf = val_result["performance"]
         sharpe       = perf["sharpe_ratio"]
         mdd          = perf["max_drawdown_pct"] / 100.0

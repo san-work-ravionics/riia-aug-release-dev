@@ -1,4 +1,4 @@
-"""RITA Core — Trading Environment V2 (Feature 32, Phase 3)
+"""RITA Core — Trading Environment V2 (Feature 32, Phase 3 + 3.5)
 
 Scenario → Execution bridge. A SEPARATE, parallel environment to the golden
 ``RIIATradingEnv`` (``trading_env.py``) — which is the frozen June-release
@@ -7,10 +7,20 @@ model and MUST NOT change. Design: ``docs/design-RIIATradingEnvV2-phase3.md``.
 Differences from golden (see design doc §3–§5):
   * Action space ``Discrete(4)`` — adds action 3 = "Hedged" (stay invested with
     a protective overlay) on top of the golden {Cash, Half, Full}.
-  * Observation +2 features — ``dd_vs_tolerance`` and ``is_hedged`` (10–11 total).
-  * Reward shaping — graded, *tolerance-relative* unhedged-drawdown penalty
-    (tolerance from Financial Goal ``risk_tolerance``), plus a hedge carry cost.
+  * Observation 13/14 features — golden 8/9 + running_sharpe_A + running_sharpe_B
+    + dd_vs_hard_limit + is_hedged + tolerance_norm.
   * Per-episode tolerance sampling so one policy generalises across low/med/high.
+
+Phase 3.5 reward realignment (2026-06-28):
+  * Reward: **Differential Sharpe Ratio** (Moody & Saffell 1998) — dense,
+    per-step, directly optimises Sharpe ratio (the graded project objective).
+  * Hard MDD at -10%: episode terminates with ``MDD_TERMINAL_PENALTY`` when
+    ``current_drawdown <= HARD_MDD_LIMIT`` regardless of tolerance level.
+  * Causal alignment: ``step()`` reads the **next bar's** return, matching
+    ``run_episode_v2`` — no train/serve skew.
+  * Patch-stack removed: ``LAMBDA_BREACH/CASH_BY_TOL/OUTCOME/DOWNSIDE`` deleted.
+  * Obs extended +2: running EMA moments (A, B) so the policy perceives the
+    Sharpe state it is graded on (fixes POMDP F5).
 
 The golden ``train_agent`` / ``run_episode`` hardcode ``RIIATradingEnv`` and the
 3-action map, so V2 ships its OWN ``train_agent_v2`` / ``train_best_of_n_v2`` /
@@ -33,7 +43,6 @@ from gymnasium import spaces
 from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
 
-from rita.core.agent_outcomes import outcome_match_sign
 from rita.core.performance import compute_all_metrics
 from rita.core.trading_env import TrainingProgressCallback  # shared, env-agnostic
 from rita.logging_config import log_event
@@ -43,48 +52,23 @@ log = structlog.get_logger(__name__)
 
 # ── Reward / hedge hyper-params (calibration defaults — tunable) ───────────────
 # Map the Financial Goal categorical risk_tolerance → a max-drawdown threshold.
+# Used ONLY for tolerance_norm conditioning — the BREACH point is HARD_MDD_LIMIT.
 RISK_TOLERANCE_MDD = {"low": -0.08, "medium": -0.15, "high": -0.25}
 _TOLERANCE_LEVELS = ("low", "medium", "high")
 
-LAMBDA_BREACH      = 0.5      # graded penalty coeff for unhedged DD past tolerance
 HEDGE_DAILY_FLOOR  = -0.015    # per-day downside truncation when hedged (put payoff approx)
-# Carry PRICED TO BREAK-EVEN against the floor's protective value. On ASML's train
-# returns E[max(FLOOR − daily, 0)] ≈ 0.36%/day, so the old 0.15%/day carry left a
-# +0.21%/day edge — blanket hedging was free alpha (~+53%/yr), which is why every
-# best-of-N winner converged to "always hedge". Setting the carry to that expected
-# benefit makes hedging neutral on a random day, so the policy only hedges when it
-# anticipates a decline → selective timing, and the Phase-4.2 outcome term + breach
-# penalty tip the remaining choice. Recalibrated 2026-06-27 (was 0.0015 / 0.0002).
 HEDGE_COST_PER_DAY = 0.0036   # amortised protective-put carry while hedged (break-even)
-# Opportunity cost of being under-invested. Without it, parking in CASH (alloc 0)
-# is a "free" way to dodge the breach penalty — zero return, zero penalty — so the
-# policy fled to cash and gave up the market's compounding (diagnosed 2026-06-27).
-# Charging a small per-step carry for under-investment, ≈ the hedge carry, makes the
-# trade-off explicit: cash and a hedge cost about the same per day, but a hedge keeps
-# your upside → the policy HEDGES THROUGH a drawdown instead of fleeing to cash.
-# TOLERANCE-SCALED: a *conservative* (low) client's mandate is to cap drawdown, so we
-# let that policy de-risk freely (≈0 cost); a balanced/aggressive client should stay
-# invested, so they pay the full carry. Re-balance 2026-06-27 after the uniform carry
-# blew low-tol max-DD (−26.7% vs static −19.8%) by forcing the policy to ride declines.
-LAMBDA_CASH_BY_TOL = {"low": 0.0, "medium": 0.0015, "high": 0.0015}
 
-# Phase 4.2 — closed-loop outcome-match shaping. Rewards a hedge decision that
-# agrees with the realised forward move (hedge before a fall, stay unhedged before
-# a rise) using the SAME match rule the dashboard reports (rita.core.agent_outcomes),
-# so the policy is trained on exactly what we measure. Secondary to portfolio return.
-# Lowered 2026-06-27 (0.002→0.0008): at break-even hedge pricing this term's anti-hedge
-# bias (markets mostly rise → hedging often "misses") made the policy under-hedge and
-# lose Sharpe vs the static rule. Kept small but non-zero for directional signal.
-LAMBDA_OUTCOME       = 0.0008
-OUTCOME_HORIZON_DAYS = 5
+# Phase 3.5 — hard MDD constraint at the graded project objective (-10%).
+# Episode terminates with a large negative reward when breached, regardless of
+# tolerance level. Tolerance modulates de-risking aggressiveness only.
+HARD_MDD_LIMIT       = -0.10
+MDD_TERMINAL_PENALTY = -5.0
 
-# Downside-semivariance penalty (Sortino/Sharpe-aware). Break-even pricing zeroes the
-# MEAN benefit of hedging, but hedging still reduces VARIANCE (it truncates losses),
-# which is what lifts Sharpe. A risk-neutral (linear) reward can't see that, so the
-# policy under-hedged. Penalising squared negative step returns makes the reward
-# concave on the downside → hedging is rewarded for smoothing losses, even at zero
-# mean EV. Added 2026-06-27 to fix under-hedging after the hedge recalibration.
-LAMBDA_DOWNSIDE      = 8.0
+# Differential Sharpe Ratio (Moody & Saffell 1998) hyper-params.
+ETA      = 0.004    # EMA decay for running moments (A, B)
+DSR_EPS  = 1e-12    # variance floor to avoid division by zero at episode start
+RF_DAILY = 0.07 / 252  # daily risk-free rate (annualised 7%)
 
 # Normalised tolerance feature for the observation so the policy can CONDITION on the
 # risk level — dd_vs_tolerance alone can't disambiguate low vs high at the same ratio.
@@ -121,13 +105,14 @@ _ACTION_LABEL = {
 # ── Gymnasium trading environment V2 ──────────────────────────────────────────
 
 class RIIATradingEnvV2(gym.Env):
-    """Custom gymnasium env with a hedge action and tolerance-relative reward.
+    """Custom gymnasium env with a hedge action and DSR reward (Phase 3.5).
 
-    Observation (10 or 11 features):
+    Observation (13 or 14 features):
         [daily_return_scaled, rsi_norm, macd_norm, bb_pct_b, trend_score,
          current_allocation, days_remaining_norm, atr_ratio,
          (ema_ratio_norm — if present),
-         dd_vs_tolerance, is_hedged]
+         running_sharpe_A, running_sharpe_B,
+         dd_vs_hard_limit, is_hedged, tolerance_norm]
 
     Action (Discrete 4):
         0 → Cash   (0%,   unhedged)
@@ -136,11 +121,9 @@ class RIIATradingEnvV2(gym.Env):
         3 → Hedged (100% invested + protective overlay)
 
     Reward:
-        portfolio_return (hedge carry/floor already reflected when hedged)
-        − LAMBDA_BREACH · max(0, |drawdown| − |mdd_tolerance|)  when UNHEDGED
-        − LAMBDA_DOWNSIDE · min(0, portfolio_return)²           downside-semivariance (Sharpe-aware)
-        − LAMBDA_CASH_BY_TOL[tol] · (1 − allocation)            opportunity cost (0 at low tol)
-        + LAMBDA_OUTCOME · sign(hedge call vs realised fwd move) closed-loop outcome match
+        Differential Sharpe Ratio (Moody & Saffell 1998) — dense per-step
+        signal that directly optimises the Sharpe ratio. Hard episode
+        termination with MDD_TERMINAL_PENALTY at HARD_MDD_LIMIT (-10%).
     """
 
     metadata = {"render_modes": []}
@@ -155,12 +138,12 @@ class RIIATradingEnvV2(gym.Env):
         ]
         has_ema_ratio = "ema_ratio" in df.columns and not df["ema_ratio"].isna().all()
         self._use_ema_ratio = has_ema_ratio
-        # golden 8 (or 9 w/ ema) + dd_vs_tolerance + is_hedged + tolerance_norm
-        self._n_features = (9 if has_ema_ratio else 8) + 3
+        # golden 8 (or 9 w/ ema) + A + B + dd_vs_hard_limit + is_hedged + tolerance_norm
+        self._n_features = (9 if has_ema_ratio else 8) + 5
 
         required_cols = self._base_cols + (["ema_ratio"] if has_ema_ratio else [])
         self.df = df.dropna(subset=required_cols).copy()
-        self.episode_length = min(episode_length, len(self.df) - 1)
+        self.episode_length = min(episode_length, len(self.df) - 2)
 
         # fixed_tolerance pins the risk level (used for deterministic eval);
         # None → sampled per episode in reset() so the policy generalises.
@@ -183,6 +166,8 @@ class RIIATradingEnvV2(gym.Env):
         self._mdd_tolerance = RISK_TOLERANCE_MDD["medium"]
         self._tolerance_level = "medium"
         self._portfolio_history: list[float] = []
+        self._A = 0.0  # DSR running mean of excess returns
+        self._B = 0.0  # DSR running mean of squared excess returns
 
     def _current_drawdown(self) -> float:
         return (self._portfolio_value - self._peak_value) / self._peak_value
@@ -201,10 +186,12 @@ class RIIATradingEnvV2(gym.Env):
         ]
         if self._use_ema_ratio:
             obs_list.append(float(np.clip((row["ema_ratio"] - 1.0) * 20, -3, 3)))
-        # V2 features: how deep the drawdown is relative to THIS user's tolerance,
-        # and whether a hedge is currently active.
-        dd_vs_tol = self._current_drawdown() / self._mdd_tolerance  # both negative → positive ratio
-        obs_list.append(float(np.clip(dd_vs_tol, 0, 3)))
+        # Phase 3.5: running Sharpe moments so the policy perceives the objective.
+        obs_list.append(float(np.clip(self._A * 100, -3, 3)))
+        obs_list.append(float(np.clip(self._B * 1000, 0, 3)))
+        # Drawdown relative to the hard MDD limit (both negative → positive ratio).
+        dd_vs_limit = self._current_drawdown() / HARD_MDD_LIMIT
+        obs_list.append(float(np.clip(dd_vs_limit, 0, 3)))
         obs_list.append(float(self._is_hedged))
         obs_list.append(_tol_norm(self._mdd_tolerance))
         return np.array(obs_list, dtype=np.float32)
@@ -218,6 +205,8 @@ class RIIATradingEnvV2(gym.Env):
         self._peak_value = 1.0
         self._current_allocation = 0.0
         self._is_hedged = 0.0
+        self._A = 0.0
+        self._B = 0.0
         # Sample tolerance per episode (unless pinned) so one policy serves all
         # risk levels and dd_vs_tolerance carries real signal.
         level = self._fixed_tolerance or _TOLERANCE_LEVELS[int(self.np_random.integers(0, 3))]
@@ -231,8 +220,9 @@ class RIIATradingEnvV2(gym.Env):
         self._current_allocation = allocation
         self._is_hedged = 1.0 if hedged else 0.0
 
-        row = self.df.iloc[self._start_idx + self._step_idx]
-        daily_ret = float(row["daily_return"])
+        # Phase 3.5 (F2): causal alignment — read return from the NEXT bar.
+        next_row = self.df.iloc[self._start_idx + self._step_idx + 1]
+        daily_ret = float(next_row["daily_return"])
 
         # Hedged: truncate per-day downside (protective-put payoff approx) and pay
         # the amortised carry. Unhedged: raw exposure.
@@ -242,42 +232,40 @@ class RIIATradingEnvV2(gym.Env):
         else:
             portfolio_ret = allocation * daily_ret
 
+        # Safety clip for bad data.
+        portfolio_ret = float(np.clip(portfolio_ret, -1.0, 1.0))
+
         self._portfolio_value *= (1 + portfolio_ret)
         self._portfolio_history.append(self._portfolio_value)
-
         self._peak_value = max(self._peak_value, self._portfolio_value)
+
+        # Phase 3.5 (F1+F5): Differential Sharpe Ratio reward.
+        R_t = portfolio_ret - RF_DAILY
+        delta_A = R_t - self._A
+        var = self._B - self._A ** 2
+        if var > DSR_EPS:
+            reward = (self._B * delta_A - 0.5 * self._A * (R_t ** 2 - self._B)) / (var ** 1.5)
+        else:
+            reward = 0.0
+
+        # Update running moments.
+        self._A += ETA * (R_t - self._A)
+        self._B += ETA * (R_t ** 2 - self._B)
+
+        # Phase 3.5 (F3): hard MDD constraint at -10%.
         current_dd = self._current_drawdown()
-
-        reward = portfolio_ret
-        if not hedged:
-            breach = abs(current_dd) - abs(self._mdd_tolerance)
-            if breach > 0:
-                reward -= LAMBDA_BREACH * breach
-        # Downside-semivariance penalty — rewards hedging for variance reduction
-        # (the Sharpe lever) even when break-even pricing zeroes its mean benefit.
-        if portfolio_ret < 0:
-            reward -= LAMBDA_DOWNSIDE * portfolio_ret * portfolio_ret
-        # Opportunity cost of sitting under-invested — stops cash being a free
-        # breach-dodge so the policy hedges through drawdowns instead of fleeing.
-        # Zero at low tolerance so a conservative mandate may de-risk to cap DD.
-        reward -= LAMBDA_CASH_BY_TOL[self._tolerance_level] * (1.0 - allocation)
-
-        # Phase 4.2 — closed-loop outcome-match shaping. Judge the hedge decision
-        # against the realised forward move using the same rule the dashboard uses.
-        g = self._start_idx + self._step_idx
-        fwd = g + OUTCOME_HORIZON_DAYS
-        if fwd < len(self.df):
-            c0 = float(self.df.iloc[g]["Close"])
-            if c0 > 0:
-                fwd_ret = float(self.df.iloc[fwd]["Close"]) / c0 - 1.0
-                direction = "hedge" if hedged else "nohedge"
-                reward += LAMBDA_OUTCOME * outcome_match_sign(direction, fwd_ret)
+        terminated = False
+        if current_dd <= HARD_MDD_LIMIT:
+            terminated = True
+            reward = MDD_TERMINAL_PENALTY
 
         self._step_idx += 1
-        terminated = self._step_idx >= self.episode_length
+        if not terminated and self._step_idx >= self.episode_length:
+            terminated = True
         truncated = False
 
         obs = self._get_obs() if not terminated else np.zeros(self._n_features, dtype=np.float32)
+        row = self.df.iloc[self._start_idx + self._step_idx]
         price = float(row["Close"]) if "Close" in row.index else None
         info = {
             "portfolio_value": self._portfolio_value,
@@ -355,12 +343,16 @@ def train_best_of_n_v2(
     model_name: str = "rita_ddqn_v2_model",
     progress_fn=None,
     eval_tolerance: str = "medium",
+    test_df: pd.DataFrame | None = None,
 ) -> "tuple[DQN, TrainingProgressCallback, dict]":
     """Train ``n_seeds`` V2 policies; keep the one with the best validation Sharpe.
 
     Reduces the single-seed noise seen in Phase 3 tuning. Selection metric is the
     held-out Sharpe from ``run_episode_v2`` at ``eval_tolerance``. The winner is
     re-saved as the canonical ``output_dir/{model_name}.zip``.
+
+    If ``test_df`` is provided, the winner is also evaluated on the held-out test
+    set and test metrics are included in the return dict (honest evaluation, F4).
     """
     best_sharpe = -float("inf")
     best_model = None
@@ -395,11 +387,25 @@ def train_best_of_n_v2(
     best_model.save(os.path.join(output_dir, model_name))
     log.info("train_best_of_n_v2.complete", best_seed=best_seed,
              best_val_sharpe=round(best_sharpe, 4), seed_results=seed_results)
-    return best_model, best_cb, {
+
+    result_dict: dict = {
         "best_seed": best_seed,
         "n_seeds_tried": n_seeds,
         "seed_results": seed_results,
     }
+
+    # Phase 3.5 (F4): honest held-out evaluation on test set.
+    if test_df is not None:
+        test_res = run_episode_v2(best_model, test_df, risk_tolerance=eval_tolerance)
+        test_perf = test_res["performance"]
+        result_dict["test_sharpe"] = round(float(test_perf.get("sharpe_ratio", 0.0)), 4)
+        result_dict["test_mdd"] = round(float(test_perf.get("max_drawdown_pct", 0.0)) / 100.0, 4)
+        result_dict["test_return"] = round(float(test_perf.get("portfolio_total_return_pct", 0.0)) / 100.0, 4)
+        result_dict["test_hedge_usage_pct"] = test_res["hedge_usage_pct"]
+        log.info("train_best_of_n_v2.test_eval", test_sharpe=result_dict["test_sharpe"],
+                 test_mdd=result_dict["test_mdd"])
+
+    return best_model, best_cb, result_dict
 
 
 # ── Inference / backtest (V2-owned — handles the 4-action map) ─────────────────
@@ -413,7 +419,7 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
     """Run the V2 model deterministically through the full DataFrame.
 
     ``risk_tolerance`` pins the tolerance for evaluation (one of low/medium/high)
-    so dd_vs_tolerance is computed consistently. Returns the same shape as golden
+    so tolerance_norm is computed consistently. Returns the same shape as golden
     ``run_episode`` plus ``hedged_steps`` / ``hedge_usage_pct``.
     """
     n_obs = model.observation_space.shape[0]
@@ -424,7 +430,7 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
         "bb_pct_b", "trend_score", "Close", "atr_14",
     ]
     has_ema = "ema_ratio" in df.columns and not df["ema_ratio"].isna().all()
-    if n_obs >= 12 and has_ema:
+    if n_obs >= 14 and has_ema:
         required.append("ema_ratio")
 
     data = df.dropna(subset=required).copy()
@@ -443,6 +449,8 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
 
     prev_alloc = 0.0
     prev_hedged = 0.0
+    A = 0.0
+    B = 0.0
 
     for i in range(len(data) - 1):
         row = data.iloc[i]
@@ -457,9 +465,13 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
             float(1.0 - i / len(data)),
             float(np.clip(row["atr_14"] / row["Close"] * 100, 0, 3)),
         ]
-        if n_obs >= 12 and has_ema:
+        if n_obs >= 14 and has_ema:
             obs_list.append(float(np.clip((row["ema_ratio"] - 1.0) * 20, -3, 3)))
-        obs_list.append(float(np.clip(current_dd / mdd_tol, 0, 3)))
+        # Phase 3.5: running Sharpe moments.
+        obs_list.append(float(np.clip(A * 100, -3, 3)))
+        obs_list.append(float(np.clip(B * 1000, 0, 3)))
+        # Drawdown relative to hard MDD limit.
+        obs_list.append(float(np.clip(current_dd / HARD_MDD_LIMIT, 0, 3)))
         obs_list.append(float(prev_hedged))
         obs_list.append(tol_feat)
 
@@ -476,6 +488,11 @@ def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium")
             portfolio_ret = allocation * daily_ret
         portfolio_value *= (1 + portfolio_ret)
         peak_value = max(peak_value, portfolio_value)
+
+        # Update running moments for DSR obs alignment with training.
+        R_t = portfolio_ret - RF_DAILY
+        A += ETA * (R_t - A)
+        B += ETA * (R_t ** 2 - B)
 
         bench_value = benchmark_values[-1] * (1 + daily_ret)
 
@@ -613,7 +630,7 @@ def recommend_hedge(
         "bb_pct_b", "trend_score", "Close", "atr_14",
     ]
     has_ema = "ema_ratio" in df.columns and not df["ema_ratio"].isna().all()
-    if n_obs >= 12 and has_ema:
+    if n_obs >= 14 and has_ema:
         required.append("ema_ratio")
 
     data = df.dropna(subset=required).copy()
@@ -637,9 +654,12 @@ def recommend_hedge(
         0.0,                                   # days_remaining_norm (point-in-time)
         float(np.clip(row["atr_14"] / row["Close"] * 100, 0, 3)),
     ]
-    if n_obs >= 12 and has_ema:
+    if n_obs >= 14 and has_ema:
         obs_list.append(float(np.clip((row["ema_ratio"] - 1.0) * 20, -3, 3)))
-    obs_list.append(float(np.clip(current_dd / mdd_tol, 0, 3)))
+    # No episode context for A/B — use zeros (point-in-time advisory).
+    obs_list.append(0.0)                       # running_sharpe_A
+    obs_list.append(0.0)                       # running_sharpe_B
+    obs_list.append(float(np.clip(current_dd / HARD_MDD_LIMIT, 0, 3)))
     obs_list.append(0.0)                       # is_hedged
     obs_list.append(_tol_norm(mdd_tol))        # tolerance_norm
 
