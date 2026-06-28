@@ -1,0 +1,122 @@
+# ── Secrets and credentials ──────────────────────────────────────────────────
+confluence-api-key.txt
+aws-creds.txt
+git-key.txt
+*git-key*
+*.key
+*.pem
+*.pfx
+.env
+.env.*
+!.env.example
+
+# ── Local config overrides (may contain personal paths or secrets) ────────────
+riia-jun-release/config/production.yaml
+riia-jun-release/config/staging.yaml
+
+# ── API keys and tokens ───────────────────────────────────────────────────────
+*api-key*
+*api_key*
+*secret*
+*token*
+!*token_budget*
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.virtualenv/
+
+# ── Test and coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# ── IDE and OS ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Data files (read-only source data — not committed) ───────────────────────
+rita_input/
+*.csv
+*.zip
+*.pkl
+*.joblib
+
+# ── Model files ───────────────────────────────────────────────────────────────
+rita_output/
+*.sb3
+
+# ── Database files ────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Node (if any frontend tooling) ───────────────────────────────────────────
+node_modules/
+dist/
+.npm/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Claude local settings (personal context — not shared) ────────────────────
+# Ignore contents but not the dir, so commands/ sub-exception works
+.claude/*
+!.claude/commands/
+!.claude/settings.json
+
+# ── Terraform ─────────────────────────────────────────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+terraform.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# ── Temporary files ───────────────────────────────────────────────────────────
+*.tmp
+*.bak
+*.swp
+~$*
+
+# ── Claude Code harness — local worktrees and session state ─────────────────
+.claire/
+
+# ── POC folders — local only, not deployed ───────────────────────────────────
+riia-ai-org/
+rita-build-portfolio/
