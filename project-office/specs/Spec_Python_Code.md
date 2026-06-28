@@ -341,6 +341,32 @@ def train_best_of_n(env, n_seeds: int = 3) -> DoubleDQN:
     """Train n models with different seeds, return the one with best backtest Sharpe."""
 ```
 
+### `trading_env_v2.py` (Feature 32 — Phase 3+3.5)
+
+```python
+class RIIATradingEnvV2(gym.Env):
+    """V2 hedge-aware RL environment. Actions: Discrete(4) — cash/half/full/hedged.
+    Reward: Differential Sharpe Ratio (DSR, Moody & Saffell 1998).
+    Hard MDD termination at -10% (HARD_MDD_LIMIT). Obs: 13 or 14 features."""
+
+HARD_MDD_LIMIT = -0.10       # episode terminates if drawdown <= this
+MDD_TERMINAL_PENALTY = -5.0  # reward on MDD termination
+ETA = 0.004                  # DSR EMA decay
+DSR_EPS = 1e-12              # variance floor for DSR denominator
+
+def temporal_split(df, train=0.70, val=0.15) -> tuple[DataFrame, DataFrame, DataFrame]:
+    """Chronological 70/15/15 split — no shuffle, no leakage."""
+
+def train_best_of_n_v2(env, n_seeds, test_df) -> dict:
+    """Train n models, select on val Sharpe, return best model + test metrics."""
+
+def run_episode_v2(model, data, tolerance) -> dict:
+    """Backtest a V2 model on data, returns portfolio_values + metrics dict."""
+
+def recommend_hedge(df, model, risk_tolerance) -> str:
+    """Run the V2 model on recent data and return a hedge recommendation string."""
+```
+
 ### `ml_dispatch.py`
 
 ```python
@@ -352,6 +378,7 @@ def _run_training(run_id: str, instrument: str, n_seeds: int = 3) -> None:
     4. TrainingTracker writes training_history.csv
     5. Update TrainingRun with all phase metrics (train/val/backtest Sharpe, MDD, return)
     6. status = complete | failed
+    V2 branch: temporal_split → 70/15/15; select on val, report on test_df.
     """
 ```
 
