@@ -322,3 +322,136 @@ def test_hard_mdd_terminates_for_all_tolerances():
         assert terminal_reward == MDD_TERMINAL_PENALTY, (
             f"terminal reward was {terminal_reward}, expected {MDD_TERMINAL_PENALTY} for tol={tol}"
         )
+
+
+# ── QA Agent: Additional Phase 3.5 coverage tests ─────────────────────────────
+
+
+def test_dsr_reward_is_zero_at_cold_start():
+    """Edge case 1: At episode start A=B=0, var=0, DSR reward must be 0.0."""
+    df = _make_df(daily_return=0.01, n=300)
+    env = RIIATradingEnvV2(df, fixed_tolerance="medium")
+    env.reset(seed=0)
+    _, reward, _, _, _ = env.step(2)  # Full unhedged, first step
+    assert reward == 0.0, f"DSR reward at cold start should be 0.0, got {reward}"
+
+
+def test_reset_zeros_running_moments():
+    """reset() must zero _A and _B — fresh DSR baseline each episode."""
+    df = _make_df(daily_return=0.01, n=300)
+    env = RIIATradingEnvV2(df, fixed_tolerance="medium")
+    env.reset(seed=0)
+    # Take several steps to accumulate non-zero A and B
+    for _ in range(10):
+        _, _, term, _, _ = env.step(2)
+        if term:
+            break
+    assert env._A != 0.0 or env._B != 0.0, "A/B should be non-zero after steps"
+    # Reset must zero them for the next episode
+    env.reset(seed=1)
+    assert env._A == 0.0
+    assert env._B == 0.0
+
+
+def test_portfolio_ret_clipped_to_safe_range():
+    """Edge case 3: Extreme daily returns are clipped so portfolio value cannot go negative."""
+    # daily_return = -2.0 everywhere: unhedged portfolio_ret = 1.0 * (-2.0) = -2.0
+    # Clip to -1.0 → portfolio_value = 1 * (1 + (-1)) = 0.0 (not -1.0)
+    df = _make_df(daily_return=-2.0, n=300)
+    env = RIIATradingEnvV2(df, fixed_tolerance="medium")
+    env.reset(seed=0)
+    env.step(2)  # Full unhedged
+    assert env._portfolio_value == pytest.approx(0.0, abs=1e-9), (
+        "Portfolio value should be 0.0 after clip, not negative"
+    )
+
+
+def test_half_position_earns_half_return():
+    """Action 1 (half position) should earn exactly 50% of the next bar's return."""
+    daily_returns = [0.0, 0.04, 0.04, 0.04, 0.04]
+    df = _make_varying_df(daily_returns)
+    env = RIIATradingEnvV2(df, fixed_tolerance="medium")
+    env.reset(seed=0)
+    env._start_idx = 0
+    # step reads next bar (index 1) with daily_return = 0.04
+    # Half unhedged: portfolio_ret = 0.5 * 0.04 = 0.02
+    _, _, _, _, info = env.step(1)
+    assert env._portfolio_value == pytest.approx(1.02, abs=1e-9)
+    assert info["allocation"] == 0.5
+    assert info["is_hedged"] == 0.0
+
+
+def test_patch_stack_constants_removed():
+    """Phase 3.5 removed LAMBDA_BREACH/CASH_BY_TOL/OUTCOME/DOWNSIDE from module."""
+    import rita.core.trading_env_v2 as mod
+    for removed in ("LAMBDA_BREACH", "LAMBDA_CASH_BY_TOL", "LAMBDA_OUTCOME",
+                     "LAMBDA_DOWNSIDE", "OUTCOME_HORIZON_DAYS"):
+        assert not hasattr(mod, removed), f"{removed} should have been removed in Phase 3.5"
+
+
+def test_episode_length_guard_prevents_out_of_bounds():
+    """Edge case: small DF must not cause IndexError; episode_length capped at len(df)-2."""
+    df = _make_df(daily_return=0.001, n=10)
+    env = RIIATradingEnvV2(df, episode_length=252)
+    # episode_length should be min(252, 10-2) = 8
+    assert env.episode_length == 8
+    obs, _ = env.reset(seed=0)
+    # Run through all steps without IndexError
+    for _ in range(env.episode_length):
+        obs, _, term, _, _ = env.step(2)
+        if term:
+            break
+
+
+def test_dsr_constants_match_design():
+    """DSR hyper-params must match the Architect design specification exactly."""
+    from rita.core.trading_env_v2 import ETA, DSR_EPS, RF_DAILY
+    assert ETA == pytest.approx(0.004)
+    assert DSR_EPS == pytest.approx(1e-12)
+    assert RF_DAILY == pytest.approx(0.07 / 252, rel=1e-6)
+    assert HARD_MDD_LIMIT == pytest.approx(-0.10)
+    assert MDD_TERMINAL_PENALTY == pytest.approx(-5.0)
+
+
+def test_obs_running_moments_update_across_steps():
+    """Running A and B must change after steps — policy perceives Sharpe state (F5)."""
+    df = _make_df(daily_return=0.01, n=300)
+    env = RIIATradingEnvV2(df, fixed_tolerance="medium")
+    env.reset(seed=0)
+    # First step: A and B start at 0, should update
+    env.step(2)
+    a1, b1 = env._A, env._B
+    assert a1 != 0.0 or b1 != 0.0, "A/B should be non-zero after first step"
+    # Second step: A and B should change again
+    env.step(2)
+    assert (env._A, env._B) != (a1, b1), "A/B should update on each step"
+
+
+def test_recommend_hedge_obs_matches_env_dimension():
+    """recommend_hedge must build obs matching the env obs dimension (13 or 14)."""
+    from rita.core.trading_env_v2 import recommend_hedge
+    for with_ema in (False, True):
+        df = _make_df(daily_return=-0.01, n=100, with_ema=with_ema)
+        expected_dim = 14 if with_ema else 13
+        model = _StubModel(action=2, n_obs=expected_dim)
+        rec = recommend_hedge(df, model, risk_tolerance="medium")
+        assert "action" in rec
+        assert "label" in rec
+        assert "breach" in rec
+
+
+def test_train_best_of_n_v2_with_test_df_returns_test_metrics():
+    """When test_df is provided, result dict must include test_sharpe/mdd/return."""
+    import tempfile
+    from rita.core.trading_env_v2 import train_best_of_n_v2
+    df = _make_df(daily_return=0.001, n=320)
+    with tempfile.TemporaryDirectory() as d:
+        _model, _cb, info = train_best_of_n_v2(
+            train_df=df, val_df=df, output_dir=d,
+            timesteps=400, n_seeds=2, model_name="v2_test_df_test",
+            test_df=df,
+        )
+    assert "test_sharpe" in info, "test_sharpe missing when test_df provided"
+    assert "test_mdd" in info, "test_mdd missing when test_df provided"
+    assert "test_return" in info, "test_return missing when test_df provided"
+    assert "test_hedge_usage_pct" in info, "test_hedge_usage_pct missing when test_df provided"
