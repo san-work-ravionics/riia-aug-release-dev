@@ -1,7 +1,7 @@
 # Feature 32 — RIIA Agent Performance + RL Improvement: Plan Status
 
 **Last updated:** 2026-06-28
-**Overall status:** `[~] Phases 1+2 DEPLOYED to prod (0178a44, 2026-06-27 — June-release golden version). Phase 3 env/intent code complete; Phase 3.3 eval showed V2 LOSES to static control → Phase 3.5 (RL Reward Realignment) opened 2026-06-28 (Aug release, repo riia-aug-release-prod)`
+**Overall status:** `[~] Phases 1+2 DEPLOYED to prod. Phase 3.5 reopened 20260628 — /enhance rl run for reward realignment (DSR, timing fix, MDD constraint). Aug release.`
 **Requirements:** `project-office/features/Jun/32 riia-agent-performance-rl/REQUIREMENTS.md`
 
 ---
@@ -13,7 +13,7 @@
 | Phase 1 | Agent Performance Data Model & Instrumentation | `[x] Complete` (merge `c68601e`) | — |
 | Phase 2 | Dashboard: RIIA Agent Performance Section | `[x] Complete` (merge `c68601e`; UI redesign 2026-06-27) | — |
 | Phase 3 | RL Plan Step 1 — Close Scenario → Execution Bridge | `[~] Env/intent code done; 3.3 eval failed (V2 < static)` | Phase 1 |
-| Phase 3.5 | **RL Reward Realignment** (Sharpe/MDD objective, not profit) | `[ ] Not started — opened 2026-06-28` | Phase 3 |
+| Phase 3.5 | **RL Reward Realignment** (Sharpe/MDD objective, not profit) | `[~] reopened 20260628 — /enhance rl run` | Phase 3 |
 | Phase 4 | RL Plan Step 2 — Outcome → Strategy/Scenario Closed Loop | `[ ] Not started` | Phase 1, Phase 3.5 |
 | Phase 5 | Validation & Rollout Gate | `[ ] Not started` | Phase 3.5, Phase 4 |
 
@@ -162,6 +162,7 @@ User has explicitly approved production rollout in writing (chat record acceptab
 | 2026-06-27 | Phase 3 intent wiring | Engineer (inline, uncommitted): `hedge_advice` intent + `execution_hedge` dispatch handler (recommendation-only, graceful when untrained) + `INTENT_TO_AGENT` entry in `classifier.py`; `recommend_hedge`/`load_agent_v2` in `trading_env_v2.py`; thin V2 branch in `ml_dispatch.py`. Tests expanded to 15 (incl. no-order-path guard). All 32 (V2 + agent_performance) green; modules import clean; no intent-count assertions broken. **Code for Phase 3 complete — only the actual SB3 training run + backtest comparison (3.3) remains, held for explicit go-ahead (gated)** |
 | 2026-06-28 | Phase 3.3 eval + reward review | Code review of V2 RL stack (`trading_env_v2.py`, `ml_dispatch.py` V2 branch, `performance.py`). **Finding: V2 policy underperforms the static control because the reward optimises profit, not the Sharpe>1 & MDD<10% objective.** Logged 6 findings (F1–F6): F1 profit-shaped reward; F2 train/eval timing inconsistency (training earns the same bar whose `daily_return` is in the obs; eval earns next bar); F3 `RISK_TOLERANCE_MDD` −15/−25% contradicts the −10% gate; F4 selection/eval optimism (`temporal_split` test set unused); F5 no path-state for a path-dependent objective (POMDP); F6 break-even hedge cost overfit to ASML. Opened **Phase 3.5 — RL Reward Realignment** (REQUIREMENTS + tasks 3.5.1–3.5.7). No code changed — review + planning only |
 | 2026-06-27 | Phase 3 design review | Reviewer pass (inline) verified claims vs code. 3 findings fixed in doc: (1) no existing `execution_analyst` intent — must create a new one + `INTENT_TO_AGENT` entry; (2) golden `train_agent`/`run_episode` hardcode `RIIATradingEnv` + 3-action map → V2 ships own `train_agent_v2`/`run_episode_v2` so `trading_env.py` stays 0-change; (3) `mdd_tolerance` must be sampled per training episode for the policy to generalise. Verdict: approve w/ changes (applied). Doc ready for Engineer |
+| 2026-06-28 | Phase 3.5 /enhance rl | Reopened Feature 32 Phase 3.5 via `/enhance rl`. Tasks 3.5.1–3.5.7: DSR reward (F1+F5), causal timing fix (F2), hard MDD −10% (F3), temporal_split eval (F4), drop patch-stack, signal sanity, retrain. Task brief: `project-office/task-briefs/task-brief-20260628-1007.md` |
 
 ---
 
