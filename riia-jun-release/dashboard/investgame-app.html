@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<link rel="stylesheet" href="css/responsive.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -31,7 +32,8 @@ html{scroll-behavior:smooth}
   --mon:#6B2FA0;--mon-bg:#F5EFFE;--mon-bd:#CFADF0;
   --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
   --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
-  --game:#B45309;--game-bg:#FEF3C7;--game-bd:#FCD34D;
+  --game:#B45309;--game-bg:#FEF3C7;--game-bd:#FCD34D;--game-light:#FFFBEB;--info:#0056B8;
+  --pos:#1A6B3C;--neg:#9B1C1C;--neg-bg:#FEF2F2;--neg-bd:#FCA5A5;
   --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
   --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
   --shm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
@@ -66,9 +68,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .nav-icon{width:16px;text-align:center;font-size:13px;flex-shrink:0;}
 
 /* ── Main content ────────────────────────────────────────── */
-.content{grid-row:2;padding:24px 28px 40px;overflow-y:auto;max-width:1200px;}
+.content{grid-row:2;padding:24px 28px 40px;overflow-y:auto;}
 .section{display:none;}
 .section.active{display:block;}
+
+/* ── Page Headers ────────────────────────────────────────── */
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.page-title{font-family:var(--fs);font-size:24px;letter-spacing:-.01em;}
+.page-sub{font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:3px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.card-body{padding-top:0;}
 
 /* ── Cards / Panels ──────────────────────────────────────── */
 .card{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--sh);}
@@ -84,15 +93,37 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .badge.neu{background:var(--surface2);color:var(--t3);border:1px solid var(--border);}
 
 /* ── Charts ──────────────────────────────────────────────── */
-.chart-wrap{position:relative;height:220px;margin:10px 0;}
+.chart-wrap{position:relative;margin:10px 0;}
+.chart-box{position:relative;width:100%;}
+.chart-title{font-size:12px;font-weight:600;margin-bottom:10px;color:var(--t2);}
+.h120{height:120px;} .h180{height:180px;} .h220{height:220px;} .h240{height:240px;} .h260{height:260px;} .h300{height:300px;}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
 
 /* ── Tabs ────────────────────────────────────────────────── */
 .tab-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;}
+.concept-tab-bar{display:flex;width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:22px;}
 .concept-tab,.crisp-tab{font-family:var(--fm);font-size:10px;font-weight:500;padding:5px 10px;border-radius:4px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--t2);transition:all .12s;}
 .concept-tab:hover,.crisp-tab:hover{border-color:var(--build-bd);color:var(--build);}
 .concept-tab.active,.crisp-tab.active{background:var(--build);color:#fff;border-color:var(--build);}
+.concept-tab-bar .crisp-tab{flex:1;text-align:center;font-family:var(--fd);font-size:12px;font-weight:500;padding:9px 6px;border:none;border-right:1px solid var(--border);border-radius:0;cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;white-space:nowrap;}
+.concept-tab-bar .crisp-tab:last-child{border-right:none;}
+.concept-tab-bar .crisp-tab:hover{background:var(--surface2);color:var(--text);}
+.concept-tab-bar .crisp-tab.active{background:var(--build-bg);color:var(--build);font-weight:700;}
 .concept-panel,.crisp-panel{display:block;}
 .concept-panel.hidden,.crisp-panel.hidden{display:none;}
+
+/* ── CRISP-DM Phase Styling ─────────────────────────────── */
+.crisp-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:24px 26px;box-shadow:var(--sh);}
+.crisp-panel.hidden{display:none;}
+.concept-phase-hdr{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+.concept-num{width:42px;height:42px;border-radius:50%;background:var(--build);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:17px;font-weight:700;flex-shrink:0;margin-top:3px;}
+.concept-title{font-family:var(--fs);font-size:19px;letter-spacing:-.01em;margin-top:4px;color:var(--text);}
+.concept-desc{font-size:12.5px;color:var(--t2);line-height:1.78;margin-bottom:16px;}
+.concept-block-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:7px;}
+.concept-facts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+.fact-pill{font-family:var(--fm);font-size:11px;padding:4px 12px;border-radius:100px;background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);white-space:nowrap;}
+.fact-pill.achieved{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.concept-chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
 
 /* ── Agent Performance Scorecards ────────────────────────── */
 .agp-sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
@@ -152,6 +183,105 @@ tr:last-child td{border-bottom:none;}
 .btn-play{display:inline-flex;align-items:center;gap:8px;background:var(--build);color:#fff;font-family:var(--fd);font-size:13px;font-weight:600;padding:10px 22px;border-radius:var(--r);border:none;cursor:pointer;transition:opacity .12s;}
 .btn-play:hover{opacity:.85;}
 
+/* ── Invest Game (embedded game) ────────────────────────── */
+.game-row{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--sh);}
+.top-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.top-row-grid .game-row{margin-bottom:0;}
+.row-hdr{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.row-hdr h2{font-family:var(--fs);font-size:18px;font-weight:400;}
+.row-badge{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 9px;border-radius:100px;background:var(--game-bg);border:1px solid var(--game-bd);color:var(--game);}
+.controls-body{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;}
+.ctrl-group{display:flex;flex-direction:column;gap:6px;}
+.ctrl-group label{font-family:var(--fm);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pill-group{display:flex;border:1.5px solid var(--border);border-radius:100px;overflow:hidden;}
+.pill{padding:7px 18px;border:none;background:transparent;font-family:var(--fd);font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;}
+.pill:first-child{border-right:1.5px solid var(--border);}
+.pill.active{background:var(--game-bg);color:var(--game);}
+.pill-ccy{font-family:var(--fm);font-size:10px;color:var(--t4);}
+.pill.active .pill-ccy{color:var(--game);opacity:.7;}
+#sec-investgame input[type="date"]{font-family:var(--fm);font-size:12px;color:var(--text);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 10px;outline:none;transition:border-color .12s;}
+#sec-investgame input[type="date"]:focus{border-color:var(--game);}
+.ctrl-actions{flex-direction:row;gap:8px;align-items:flex-end;}
+.btn{padding:7px 18px;border-radius:var(--r);border:1.5px solid transparent;font-family:var(--fd);font-size:12px;font-weight:600;cursor:pointer;transition:all .14s;}
+.btn-primary{background:var(--game);color:#fff;border-color:var(--game);}
+.btn-primary:hover:not(:disabled){background:#92400E;}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.btn-ghost{background:var(--surface2);color:var(--t2);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+.selected-range-info{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--fm);font-size:11px;color:var(--ok);background:var(--ok-bg);border:1px solid var(--ok-bd);border-radius:var(--r);padding:6px 14px;}
+.selected-range-info .range-label{color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
+.progress-wrap{display:flex;align-items:center;gap:12px;}
+.progress-bar{flex:1;height:8px;background:var(--border);border-radius:100px;overflow:hidden;}
+#progress-fill{height:100%;background:linear-gradient(90deg,var(--game),#F59E0B);border-radius:100px;transition:width .4s ease;}
+#progress-label-text{font-family:var(--fm);font-size:10px;color:var(--t3);white-space:nowrap;}
+.pnl-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}
+.pnl-table th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:6px 12px;text-align:left;border-bottom:1.5px solid var(--border);background:var(--surface2);}
+.pnl-table td{padding:6px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.pnl-metric-col{width:110px;}
+.pnl-you-hdr{color:var(--info);}
+.pnl-ai-hdr{color:var(--game);}
+.pnl-row-label{font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pnl-sep{color:var(--t4);margin:0 5px;font-family:var(--fm);font-size:10px;}
+.pnl-value{font-family:var(--fm);font-size:12px;color:var(--text);font-weight:500;}
+.pnl-value.pos{color:var(--ok);}
+.pnl-value.neg{color:var(--danger);}
+.pnl-value.cost{color:var(--t3);}
+.pnl-net-row td{background:var(--surface2);border-top:1.5px solid var(--border);border-bottom:none;}
+.pnl-net-row .pnl-value{font-size:14px;font-weight:700;}
+.ig-winner-banner{display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 28px;margin-bottom:16px;border:2px solid var(--game-bd);background:var(--game-bg);border-radius:var(--r);}
+.ig-winner-banner .winner-banner-label{font-family:var(--fs);font-size:16px;color:var(--game);}
+#winner-badge{display:inline-block;padding:5px 22px;border-radius:100px;font-family:var(--fd);font-size:13px;font-weight:700;}
+#winner-badge.you-win{background:var(--ok);color:#fff;}
+#winner-badge.ai-wins{background:var(--danger);color:#fff;}
+#winner-badge.tie{background:var(--game);color:#fff;}
+.day-action-bar{display:flex;align-items:stretch;margin-top:12px;background:var(--game-light);border:1px solid var(--game-bd);border-radius:var(--r);overflow:hidden;}
+.dbar-day{width:25%;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:12px 20px;}
+.dbar-day-lbl{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--game);font-weight:600;}
+.dbar-day-date{font-family:var(--fm);font-size:10px;color:var(--t3);}
+.dbar-day-price{font-family:var(--fm);font-size:16px;font-weight:700;color:var(--text);line-height:1.1;}
+.dbar-sep{width:1px;background:var(--game-bd);flex-shrink:0;}
+.dbar-actions{width:50%;display:flex;align-items:center;justify-content:center;gap:20px;padding:14px 20px;}
+.arc-btn{border-radius:100px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:8px 20px;transition:transform .09s,box-shadow .09s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.arc-btn-lbl{font-family:var(--fd);font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1;}
+.arc-buy{background:radial-gradient(circle at 35% 30%,#60a5fa,#1d4ed8);color:#fff;box-shadow:0 5px 0 #1e3a8a,0 6px 8px rgba(0,0,0,.28);}
+.arc-buy:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#93c5fd,#2563eb);}
+.arc-buy:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #1e3a8a,0 2px 4px rgba(0,0,0,.2);}
+.arc-hold{background:radial-gradient(circle at 35% 30%,#ffffff,#e2e8f0);color:#374151;box-shadow:0 5px 0 #94a3b8,0 6px 8px rgba(0,0,0,.22);}
+.arc-hold:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#ffffff,#f1f5f9);}
+.arc-hold:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #94a3b8,0 2px 4px rgba(0,0,0,.15);}
+.arc-sell{background:radial-gradient(circle at 35% 30%,#fb923c,#ea580c);color:#fff;box-shadow:0 5px 0 #9a3412,0 6px 8px rgba(0,0,0,.28);}
+.arc-sell:hover:not(:disabled){background:radial-gradient(circle at 35% 30%,#fdba74,#f97316);}
+.arc-sell:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #9a3412,0 2px 4px rgba(0,0,0,.2);}
+.arc-btn:disabled{opacity:.28;cursor:not-allowed;box-shadow:0 2px 0 rgba(0,0,0,.15);}
+#game-table{border-collapse:collapse;font-size:14px;width:100%;}
+#game-table thead th{font-family:var(--fm);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:center;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border);white-space:nowrap;}
+#game-table tbody tr{border-bottom:1px solid var(--border);}
+#game-table tbody tr:last-child{border-bottom:none;}
+#game-table tbody tr:hover{background:var(--surface2);}
+#game-table tbody td{padding:8px 12px;color:var(--t2);white-space:nowrap;text-align:center;vertical-align:middle;}
+.row-label{font-family:var(--fm);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);background:var(--surface2);padding:8px 12px;text-align:left;position:sticky;left:0;z-index:1;min-width:80px;border-right:1px solid var(--border);}
+.day-col{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--text);padding:8px 12px;text-align:center;background:var(--surface2);min-width:100px;}
+.greyed-out{opacity:.25;pointer-events:none;}
+.day-col.active-col{background:var(--warn-bg);color:var(--warn);}
+.day-data{padding:8px 12px;text-align:center;vertical-align:middle;font-family:var(--fm);font-size:13px;color:var(--t2);min-width:100px;}
+.day-data.active-col{background:var(--warn-bg);}
+.action-label{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;border:1.5px solid;font-family:var(--fd);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.action-label.buy{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.action-label.sell{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+.action-label.hold{background:var(--surface2);color:var(--t2);border-color:var(--border2);}
+.ai-cell{font-family:var(--fm);font-size:13px;font-weight:500;}
+.ai-cell.ai-buy{color:var(--ok);}
+.ai-cell.ai-sell{color:var(--danger);}
+.ai-cell.ai-hold{color:var(--t2);}
+.gate-cell{display:flex;flex-direction:column;gap:2px;align-items:center;}
+.gate-rule{font-family:var(--fm);font-size:11px;color:var(--t3);white-space:normal;text-align:center;max-width:120px;}
+.comp-insight{font-size:12px;color:var(--t3);font-style:italic;white-space:normal;text-align:center;max-width:130px;}
+#game-table tbody td.comp-insight{white-space:normal;min-width:130px;max-width:180px;line-height:1.4;padding:8px 14px;}
+.status-badge{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;}
+.status-badge.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.status-badge.flag{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bd);}
+.day-tag{display:block;font-size:8px;font-weight:400;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media(max-width:768px){
   .shell{grid-template-columns:1fr;}
@@ -167,6 +297,11 @@ tr:last-child td{border-bottom:none;}
 
 <!-- Topbar -->
 <header class="topbar">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
+    </svg>
+  </button>
   <a class="logo" href="index.html">
     <div class="logo-icon">
       <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2h4v4H2zM8 2h4v4H8zM2 8h4v4H2zM8 8h4v4H8z"/></svg>
@@ -186,7 +321,7 @@ tr:last-child td{border-bottom:none;}
   <div class="nav-section">
     <div class="nav-label">Invest Game</div>
     <div class="nav-item active" data-s="investgame" onclick="show('investgame',this)">
-      <span class="nav-icon">🎮</span> Play Game
+      <span class="nav-icon">🎮</span> Invest Game
     </div>
     <div class="nav-item" data-s="concepts" onclick="show('concepts',this)">
       <span class="nav-icon">📚</span> Concepts
@@ -213,18 +348,190 @@ tr:last-child td{border-bottom:none;}
 <main class="content">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     Section: Invest Game (intro + Play Now button)
+     Section: Invest Game
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="section active" id="sec-investgame">
-  <div class="intro-card">
-    <h2>Invest Game</h2>
-    <p>
-      Experience AI-powered investment decision-making first hand. Play the RITA Trial Invest Game
-      and learn how a team of specialised agents collaborate to execute trades on real market data.
-    </p>
-    <button class="btn-play" onclick="window.location.href='investgame.html'">
-      Play Now <span style="font-size:16px">→</span>
-    </button>
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Invest Game</div>
+      <div class="page-sub">Step through real market data alongside AI trading agents</div>
+    </div>
+  </div>
+
+  <div id="winner-banner" class="ig-winner-banner" style="display:none">
+    <span class="winner-banner-label">Game Over</span>
+    <div id="winner-badge">—</div>
+  </div>
+
+  <div class="top-row-grid">
+    <div id="row-controls" class="game-row">
+      <div class="row-hdr">
+        <h2>Configure Your Game</h2>
+        <span class="row-badge">Setup</span>
+      </div>
+      <div class="controls-body">
+        <div class="ctrl-group">
+          <label>Instrument</label>
+          <div class="pill-group">
+            <button id="pill-asml" class="pill active">ASML <span class="pill-ccy">EUR</span></button>
+            <button id="pill-nvidia" class="pill">NVIDIA <span class="pill-ccy">USD</span></button>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <label>Start Date</label>
+          <input type="date" id="start-date">
+        </div>
+        <div class="ctrl-group">
+          <label>End Date</label>
+          <input type="date" id="end-date">
+        </div>
+        <div class="ctrl-group ctrl-actions">
+          <button id="btn-select-days" class="btn btn-primary" disabled>Select</button>
+          <button id="btn-new-game" class="btn btn-ghost" style="display:none">&#8635; New Game</button>
+          <button id="btn-volatile-days" class="btn btn-ghost">&#9889; Volatile</button>
+        </div>
+      </div>
+      <div id="selection-label" class="selected-range-info" style="display:none">
+        <span class="range-label">Selected</span>
+        <span id="selected-instrument">—</span> &mdash;
+        <span id="selected-range-text">—</span> &nbsp;·&nbsp;
+        <span id="selected-days-count">7 trading days</span>
+      </div>
+      <div id="day-action-bar" class="day-action-bar" style="display:none">
+        <div class="dbar-day">
+          <span class="dbar-day-lbl">Day 1</span>
+          <span class="dbar-day-date" id="dbar-date-1">—</span>
+          <span class="dbar-day-price" id="dbar-price-1">—</span>
+        </div>
+        <div class="dbar-sep"></div>
+        <div class="dbar-day">
+          <span class="dbar-day-lbl">Day 2</span>
+          <span class="dbar-day-date" id="dbar-date-2">—</span>
+          <span class="dbar-day-price" id="dbar-price-2">—</span>
+        </div>
+        <div class="dbar-sep"></div>
+        <div class="dbar-actions">
+          <button id="dbar-buy" class="arc-btn arc-buy" disabled><span class="arc-btn-lbl">Buy</span></button>
+          <button id="dbar-hold" class="arc-btn arc-hold" disabled><span class="arc-btn-lbl">Hold</span></button>
+          <button id="dbar-sell" class="arc-btn arc-sell" disabled><span class="arc-btn-lbl">Sell</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="row-performance" class="game-row" style="display:none">
+      <table class="pnl-table">
+        <thead>
+          <tr>
+            <th class="pnl-metric-col"></th>
+            <th class="pnl-you-hdr">You</th>
+            <th class="pnl-ai-hdr">AI Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pnl-row-label">Cash / Portfolio</td>
+            <td><span id="user-cash" class="pnl-value">€5,000.00</span><span class="pnl-sep">/</span><span id="user-portfolio" class="pnl-value">€0.00</span></td>
+            <td><span id="ai-cash" class="pnl-value">€5,000.00</span><span class="pnl-sep">/</span><span id="ai-portfolio" class="pnl-value">€0.00</span></td>
+          </tr>
+          <tr>
+            <td class="pnl-row-label">Costs / Tax</td>
+            <td><span id="user-costs" class="pnl-value cost">−€0.00</span><span class="pnl-sep">/</span><span id="user-tax" class="pnl-value cost">−€0.00</span></td>
+            <td><span id="ai-costs" class="pnl-value cost">−€0.00</span><span class="pnl-sep">/</span><span id="ai-tax" class="pnl-value cost">−€0.00</span></td>
+          </tr>
+          <tr class="pnl-net-row">
+            <td class="pnl-row-label">Net Value</td>
+            <td><span id="user-net" class="pnl-value">€5,000.00</span></td>
+            <td><span id="ai-net" class="pnl-value">€5,000.00</span></td>
+          </tr>
+          <tr id="budget-row" style="display:none">
+            <td class="pnl-row-label">Budget</td>
+            <td><div id="budget-display" style="font-family:var(--fm);font-size:11px;display:flex;gap:10px;align-items:center"></div></td>
+            <td><div id="ai-budget-display" style="font-family:var(--fm);font-size:11px;display:flex;gap:10px;align-items:center"></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+        <span id="progress-label-text">Day 0 of 7</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="row-game-table" class="card" style="padding:0">
+    <div class="card-hdr" style="padding:12px 16px;border-bottom:1px solid var(--border);margin-bottom:0">
+      <span class="card-title" style="font-size:13px;font-weight:600;font-family:var(--fd);margin-bottom:0">Investing Journal</span>
+      <span style="font-size:11px;color:var(--t3)" id="journal-sub">—</span>
+    </div>
+    <div style="padding:0">
+    <div class="tbl-wrap" style="overflow-y:auto;max-height:360px;margin-top:0">
+      <table id="game-table">
+        <thead>
+          <tr>
+            <th class="row-label"></th>
+            <th id="game-row-3" class="day-col" data-day="3" style="display:none">3</th>
+            <th id="game-row-4" class="day-col" data-day="4" style="display:none">4</th>
+            <th id="game-row-5" class="day-col" data-day="5" style="display:none">5</th>
+            <th id="game-row-6" class="day-col" data-day="6" style="display:none">6</th>
+            <th id="game-row-7" class="day-col" data-day="7" style="display:none">7</th>
+            <th id="game-row-8" class="day-col" data-day="8" style="display:none">8</th>
+            <th id="game-row-9" class="day-col" data-day="9" style="display:none">9</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">Price</td>
+            <td id="row3-price" class="day-data" data-day="3" style="display:none">—</td>
+            <td id="row4-price" class="day-data" data-day="4" style="display:none">—</td>
+            <td id="row5-price" class="day-data" data-day="5" style="display:none">—</td>
+            <td id="row6-price" class="day-data" data-day="6" style="display:none">—</td>
+            <td id="row7-price" class="day-data" data-day="7" style="display:none">—</td>
+            <td id="row8-price" class="day-data" data-day="8" style="display:none">—</td>
+            <td id="row9-price" class="day-data" data-day="9" style="display:none">—</td>
+          </tr>
+          <tr>
+            <td class="row-label">Action</td>
+            <td id="action-label-3" class="day-data" data-day="3" style="display:none">—</td>
+            <td id="action-label-4" class="day-data" data-day="4" style="display:none">—</td>
+            <td id="action-label-5" class="day-data" data-day="5" style="display:none">—</td>
+            <td id="action-label-6" class="day-data" data-day="6" style="display:none">—</td>
+            <td id="action-label-7" class="day-data" data-day="7" style="display:none">—</td>
+            <td id="action-label-8" class="day-data" data-day="8" style="display:none">—</td>
+            <td id="action-label-9" class="day-data" data-day="9" style="display:none">—</td>
+          </tr>
+          <tr>
+            <td class="row-label">AI Action</td>
+            <td id="ai-cell-3" class="day-data ai-cell" data-day="3" style="display:none">—</td>
+            <td id="ai-cell-4" class="day-data ai-cell" data-day="4" style="display:none">—</td>
+            <td id="ai-cell-5" class="day-data ai-cell" data-day="5" style="display:none">—</td>
+            <td id="ai-cell-6" class="day-data ai-cell" data-day="6" style="display:none">—</td>
+            <td id="ai-cell-7" class="day-data ai-cell" data-day="7" style="display:none">—</td>
+            <td id="ai-cell-8" class="day-data ai-cell" data-day="8" style="display:none">—</td>
+            <td id="ai-cell-9" class="day-data ai-cell" data-day="9" style="display:none">—</td>
+          </tr>
+          <tr>
+            <td class="row-label">Gate</td>
+            <td class="day-data" data-day="3" style="display:none"><div class="gate-cell"><span id="comp-status-3">—</span><span id="comp-rule-3" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="4" style="display:none"><div class="gate-cell"><span id="comp-status-4">—</span><span id="comp-rule-4" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="5" style="display:none"><div class="gate-cell"><span id="comp-status-5">—</span><span id="comp-rule-5" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="6" style="display:none"><div class="gate-cell"><span id="comp-status-6">—</span><span id="comp-rule-6" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="7" style="display:none"><div class="gate-cell"><span id="comp-status-7">—</span><span id="comp-rule-7" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="8" style="display:none"><div class="gate-cell"><span id="comp-status-8">—</span><span id="comp-rule-8" class="gate-rule">—</span></div></td>
+            <td class="day-data" data-day="9" style="display:none"><div class="gate-cell"><span id="comp-status-9">—</span><span id="comp-rule-9" class="gate-rule">—</span></div></td>
+          </tr>
+          <tr>
+            <td class="row-label">Insight</td>
+            <td id="comp-insight-3" class="day-data comp-insight" data-day="3" style="display:none">—</td>
+            <td id="comp-insight-4" class="day-data comp-insight" data-day="4" style="display:none">—</td>
+            <td id="comp-insight-5" class="day-data comp-insight" data-day="5" style="display:none">—</td>
+            <td id="comp-insight-6" class="day-data comp-insight" data-day="6" style="display:none">—</td>
+            <td id="comp-insight-7" class="day-data comp-insight" data-day="7" style="display:none">—</td>
+            <td id="comp-insight-8" class="day-data comp-insight" data-day="8" style="display:none">—</td>
+            <td id="comp-insight-9" class="day-data comp-insight" data-day="9" style="display:none">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
   </div>
 </section>
 
@@ -232,9 +539,70 @@ tr:last-child td{border-bottom:none;}
      Section: Concepts (Investment Workflow & Agents — 8 tabs)
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="section" id="sec-concepts">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Concepts</div>
+      <div class="page-sub">Investment philosophy and how professional firms approach markets</div>
+    </div>
+  </div>
+
+  <!-- Card 1: Investment Philosophies -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-philosophies').style.display=document.getElementById('cb-philosophies').style.display==='none'?'block':'none'">
+      <span class="card-title">Investment Philosophies</span>
+      <span style="color:var(--t3)">▼</span>
+    </div>
+    <div id="cb-philosophies" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+      <p>Investing is not a single strategy but a spectrum of philosophies, each built on a different theory of where value comes from and how price and value eventually converge. Value investors, in the tradition of Benjamin Graham and Warren Buffett, seek assets trading below their intrinsic worth and hold patiently for the market to correct the mispricing. Growth investors are willing to pay premium valuations today in exchange for the compounding power of above-average earnings expansion tomorrow.</p>
+      <p style="margin-top:8px">Momentum investors take a different view entirely — they follow price itself, buying strength and selling weakness on the premise that trends persist longer than intuition suggests. Quantitative investing elevates any of these philosophies into a rules-based system, using data and models to generate signals free from emotional interference. What unifies the best practitioners across all schools is a shared commitment to risk-adjusted thinking: the goal is never maximum return in isolation, but the highest possible return per unit of risk accepted.</p>
+    </div>
+  </div>
+
+  <!-- Card 2: Why Retail Investors Lose Money -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-retail').style.display=document.getElementById('cb-retail').style.display==='none'?'block':'none'">
+      <span class="card-title">Why Retail Investors Lose Money</span>
+      <span style="color:var(--t3)">▼</span>
+    </div>
+    <div id="cb-retail" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+      <p>Most retail investors do not lose because markets are unfair — they lose because human psychology is systematically mismatched with what markets demand. At emotional extremes, fear and greed take over: investors buy enthusiastically near peaks and sell in panic near troughs, locking in the exact pattern that destroys wealth over time. Overtrading compounds the problem, as each unnecessary transaction extracts a small cost in commissions, taxes, and slippage.</p>
+      <p style="margin-top:8px">Recency bias keeps retail investors perpetually a step behind: treating whatever happened recently as representative of what will happen next. Without a systematic edge, trades entered on headlines or emotion compete directly against institutional algorithms. Position sizing is rarely taught yet equally important — risking too large a fraction on any single trade means one bad outcome can erase months of discipline. And the most universal failure is simply having no exit plan.</p>
+    </div>
+  </div>
+
+  <!-- Card 3: How Professional Investment Firms Invest -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-workflow-intro').style.display=document.getElementById('cb-workflow-intro').style.display==='none'?'block':'none'">
+      <span class="card-title">How Professional Investment Firms Invest</span>
+      <span style="color:var(--t3)">▼</span>
+    </div>
+    <div id="cb-workflow-intro" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+      <p>In a professionally run investment firm, highly sophisticated quantitative finance tools and Risk / Reward processes are used by smart professionals. They use these to evaluate various investment opportunities, calculate the Risk / Reward and, as appropriate, hedge them with appropriate derivatives product(s).</p>
+      <div class="tbl-wrap" style="margin-top:10px;margin-bottom:10px">
+        <table>
+          <thead><tr><th>Step</th><th>Purpose / Role</th><th>Scope</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Initiation</strong></td><td>Financial Goal</td><td>Define a clear, quantitative financial goal for a time period</td></tr>
+            <tr><td><strong>Research</strong></td><td>Research Analyst</td><td>Macro-economic trends, goods flow and demand/supply for growth projections</td></tr>
+            <tr><td><strong>Research</strong></td><td>Sentiment Analyst</td><td>Present market conditions, public news and investor sentiments</td></tr>
+            <tr><td><strong>Research</strong></td><td>Technical Analyst</td><td>Technical Indicators: candlestick patterns, MACD, RSI, stochastic indicators</td></tr>
+            <tr><td><strong>Design</strong></td><td>Strategy Analyst</td><td>Strategy approach: Value Investing, Momentum Investing, Long Term Horizon</td></tr>
+            <tr><td><strong>Evaluation</strong></td><td>Scenario Analyst</td><td>Evaluate portfolio performance through scenarios; MDD triggers derivatives trade</td></tr>
+            <tr><td><strong>Execution</strong></td><td>Execution Analyst</td><td>Take appropriate investment and balance with derivatives trade</td></tr>
+            <tr><td><strong>Feedback</strong></td><td>Outcome Analyst</td><td>Closed loop: result from each trade fed back to fine-tune the approach</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>By applying <strong>data science methods</strong>, time-series market data can be transformed into actionable intelligence. With <strong>Agentic AI</strong>, a Risk/Reward policy can be set against which AI agents validate trades and provide a Risk Informed view. These two elements become the core of the <strong>Risk Informed Investment Approach (RIIA)</strong>.</p>
+    </div>
+  </div>
+
+  <!-- Investment Workflow & Agents (8 tabs with charts) -->
   <div class="card">
-    <div class="card-title">Investment Workflow & Agents</div>
-    <div class="card-subtitle">8 specialised agents powering RITA decisions <span id="aw-status"></span></div>
+    <div class="card-hdr">
+      <span class="card-title">Agents & Linked Analytics</span>
+      <span id="aw-status" style="font-size:11px;color:var(--t3)"></span>
+    </div>
 
     <div class="tab-bar">
       <span class="concept-tab active" onclick="switchAgentTab('a1',this)">Financial Goal</span>
@@ -253,7 +621,7 @@ tr:last-child td{border-bottom:none;}
       <div class="chart-wrap"><canvas id="aw-a1-c1"></canvas></div>
     </div>
     <div class="concept-panel hidden" id="aw-a2">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">NIFTY close price trend over 252 trading days.</p>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">ASML close price trend over 252 trading days.</p>
       <div class="chart-wrap"><canvas id="aw-a2-c1"></canvas></div>
     </div>
     <div class="concept-panel hidden" id="aw-a3">
@@ -288,39 +656,279 @@ tr:last-child td{border-bottom:none;}
      Section: CRISP-DM
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="section" id="sec-crisp-dm">
-  <div class="card">
-    <div class="card-title">CRISP-DM Methodology</div>
-    <div class="card-subtitle">Cross-Industry Standard Process for Data Mining <span id="crisp-status"></span></div>
-
-    <div class="tab-bar">
-      <span class="crisp-tab active" onclick="switchCrispTab('p1',this)">Business Understanding</span>
-      <span class="crisp-tab" onclick="switchCrispTab('p4',this)">Modeling</span>
-      <span class="crisp-tab" onclick="switchCrispTab('p5',this)">Evaluation</span>
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">CRISP-DM</div>
+      <div class="page-sub">Cross-Industry Standard Process for Data Mining <span id="crisp-status"></span></div>
     </div>
+  </div>
 
-    <!-- Phase 1 -->
-    <div class="crisp-panel" id="crisp-p1">
-      <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-val" id="crisp-p1-sharpe">—</div><div class="kpi-lbl">Sharpe</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="crisp-p1-mdd">—</div><div class="kpi-lbl">Max DD</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="crisp-p1-ret">—</div><div class="kpi-lbl">Return</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="crisp-p1-wr">—</div><div class="kpi-lbl">Win Rate</div></div>
+  <div class="concept-tab-bar">
+    <button class="crisp-tab active" onclick="switchCrispTab('p1',this)">① Business Understanding</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p2',this)">② Data Understanding</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p3',this)">③ Data Preparation</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p4',this)">④ Modeling</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p5',this)">⑤ Evaluation</button>
+    <button class="crisp-tab" onclick="switchCrispTab('p6',this)">⑥ Deployment</button>
+  </div>
+
+  <!-- Phase 1: Business Understanding -->
+  <div class="crisp-panel" id="crisp-p1">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">1</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 1</span>
+        <div class="concept-title">Business Understanding</div>
       </div>
-      <div class="chart-wrap"><canvas id="crisp-p1-c1"></canvas></div>
-      <div class="chart-wrap"><canvas id="crisp-p1-c2"></canvas></div>
     </div>
-
-    <!-- Phase 4 -->
-    <div class="crisp-panel hidden" id="crisp-p4">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Feature importance and policy improvement over training rounds.</p>
-      <div class="chart-wrap"><canvas id="crisp-p4-c1"></canvas></div>
-      <div class="chart-wrap"><canvas id="crisp-p4-c2"></canvas></div>
+    <p class="concept-desc">RIIA stands for Risk Informed Investment Approach. This translates into the goal of ensuring the instrument or portfolio investment stays within a certain return range and the drawdown on the portfolio remains within acceptable limits. In the investment domain, the Sharpe ratio indicates how returns compare to the standard deviation of returns on the instrument or portfolio based on historical data. We therefore adopt Sharpe ratio and maximum drawdown as our core business goals.<br><br>RITA operationalises these goals by training a reinforcement learning agent that makes daily capital allocation decisions in ASML stock, targeting a Sharpe ratio above 1.0 and a maximum drawdown below 10%. The investment decision is simplified to three discrete allocations — hold cash (0%), invest half (50%), or fully invest (100%) — so the model focuses entirely on timing entry and exit.<br><br>Success is defined as consistent out-performance versus a passive buy-and-hold benchmark on a fully held-out backtest period the model never saw during training.</p>
+    <div class="concept-block-label">Constraints &amp; Targets</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Target Sharpe ≥ 1.0</span>
+      <span class="fact-pill">Max Drawdown ≤ 10%</span>
+      <span class="fact-pill">Actions: {0%, 50%, 100%}</span>
+      <span class="fact-pill">Instrument: ASML (AEX)</span>
+      <span class="fact-pill">Beat Buy &amp; Hold</span>
+      <span class="fact-pill">Daily decision frequency</span>
     </div>
+    <div class="concept-block-label" style="margin-top:10px">Achieved (ASML Backtest)</div>
+    <div class="concept-facts">
+      <span class="fact-pill achieved">Sharpe: <strong id="crisp-p1-sharpe">—</strong></span>
+      <span class="fact-pill achieved">Max DD: <strong id="crisp-p1-mdd">—</strong></span>
+      <span class="fact-pill achieved">Total Return: <strong id="crisp-p1-ret">—</strong></span>
+      <span class="fact-pill achieved">Win Rate: <strong id="crisp-p1-wr">—</strong></span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-block-label" style="margin-bottom:10px">Project KPIs</div>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Sharpe Ratio — Target ≥ 1.0</div>
+        <div class="chart-box h120"><canvas id="crisp-p1-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Max Drawdown % — Limit ≤ 10%</div>
+        <div class="chart-box h120"><canvas id="crisp-p1-c1b"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">DDQN Strategy vs Buy &amp; Hold — Cumulative Returns (base 100)</div>
+        <div class="chart-box h240"><canvas id="crisp-p1-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Reinforcement Learning Model Decision Plot</div>
+        <div class="chart-box h240"><canvas id="crisp-p1-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
 
-    <!-- Phase 5 -->
-    <div class="crisp-panel hidden" id="crisp-p5">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Evaluation results: Sharpe and Max Drawdown across runs.</p>
-      <div class="chart-wrap"><canvas id="crisp-p5-c1"></canvas></div>
+  <!-- Phase 2: Data Understanding -->
+  <div class="crisp-panel hidden" id="crisp-p2">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">2</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 2</span>
+        <div class="concept-title">Data Understanding</div>
+      </div>
+    </div>
+    <p class="concept-desc">The ASML dataset covers daily OHLCV price history from 2019 through mid-2025 — approximately 1,500 trading sessions spanning bull runs, corrections, and recovery cycles, making it rich in both trending and mean-reverting regimes.<br><br>The publicly available data has 6 features: Date, Open, Close, High, Low and Volume. This is also called OHLCV data for instruments. From this data, eleven technical indicators are derived: RSI(14) for momentum extremes, MACD(12/26/9) and its signal line for trend momentum, Bollinger Band %B for price position relative to volatility bands, 20-day rolling volatility as a regime indicator, and daily log returns as the primary risk signal.<br><br>K-Means clustering with k=3 on the full feature matrix reveals three distinct market regimes — bullish trending, sideways consolidation, and bearish stress — each characterised by different RSI and volatility profiles that require different allocation strategies. The feature correlation matrix confirms that RSI and MACD carry complementary but non-redundant momentum signals, while 20-day volatility is largely orthogonal to both, making all three dimensions genuinely informative for the DDQN state vector.</p>
+    <div class="concept-block-label">Dataset Statistics</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Rows: <strong id="crisp-p2-rows">—</strong></span>
+      <span class="fact-pill">Features: <strong id="crisp-p2-feats">—</strong></span>
+      <span class="fact-pill">From: <strong id="crisp-p2-from">—</strong></span>
+      <span class="fact-pill">To: <strong id="crisp-p2-to">—</strong></span>
+      <span class="fact-pill">Missing: 0%</span>
+      <span class="fact-pill">Market Regimes: 3</span>
+    </div>
+    <div class="concept-block-label" style="margin-top:10px">Engineered Features</div>
+    <div class="concept-facts">
+      <span class="fact-pill">RSI (14)</span>
+      <span class="fact-pill">MACD (12/26/9)</span>
+      <span class="fact-pill">MACD Histogram</span>
+      <span class="fact-pill">BB %B</span>
+      <span class="fact-pill">Volatility 20d</span>
+      <span class="fact-pill">Daily Return</span>
+      <span class="fact-pill">Log Return</span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">ASML Close Price (€) — Full 2019–2025 History</div>
+        <div class="chart-box h240"><canvas id="crisp-p2-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">RSI (14) — Overbought (70) &amp; Oversold (30) Bands</div>
+        <div class="chart-box h240"><canvas id="crisp-p2-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">MACD Line (12/26) — Momentum Signal</div>
+        <div class="chart-box h240"><canvas id="crisp-p2-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3: Data Preparation -->
+  <div class="crisp-panel hidden" id="crisp-p3">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">3</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 3</span>
+        <div class="concept-title">Data Preparation</div>
+      </div>
+    </div>
+    <p class="concept-desc">Since the raw OHLCV dataset is already well-formed with negligible missing values and no duplicates, this phase focuses on feature engineering and structuring data for the model. The dataset start date must be set earlier than the intended modeling start so that look-back indicators such as MACD(12/26/9) have sufficient warm-up rows — starting too late pushes missing-value rates above 5%.<br><br>The correlation matrix reveals redundancy among MACD components and Stochastic oscillators; one representative per group is selected to keep the state vector non-redundant while retaining MACD as a trend-crossing signal and raw Close for portfolio tracking. All selected features are z-score normalised using parameters computed solely on the training window, then applied forward to validation and backtest windows to simulate the live inference setting. The final DDQN state vector combines non-redundant technical signals with normalised price data — not to predict Close, but to provide directional and momentum signals that guide the agent's discrete buy/hold/sell decisions.</p>
+    <div class="concept-block-label">Split Configuration</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Training: 80% — ends <strong id="crisp-p3-train-end">—</strong></span>
+      <span class="fact-pill">Val/BT: 20% — from <strong id="crisp-p3-val-start">—</strong></span>
+      <span class="fact-pill">Total Rows: <strong id="crisp-p3-rows">—</strong></span>
+      <span class="fact-pill">Normalisation: z-score (train params only)</span>
+      <span class="fact-pill">State Window: 14 days</span>
+      <span class="fact-pill">No shuffling — temporal order preserved</span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-block-label">Engineered Feature Indicators</div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Trend Score — EMA-5/13/26 composite · [-1, +1]</div>
+        <div class="chart-box h240"><canvas id="crisp-p3-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">ATR% — Daily Volatility as % of Close</div>
+        <div class="chart-box h240"><canvas id="crisp-p3-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">EMA Crossovers — EMA-5 / 13 / 26 / 50 with Bull/Bear Signals</div>
+        <div class="chart-box h240"><canvas id="crisp-p3-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 4: Modeling -->
+  <div class="crisp-panel hidden" id="crisp-p4">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">4</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 4</span>
+        <div class="concept-title">Modeling</div>
+      </div>
+    </div>
+    <p class="concept-desc">The model uses a Double Deep Q-Network (DDQN), a reinforcement learning algorithm implemented with Stable-Baselines3. It learns from 11 market indicators observed over a 14-day period and can choose between three actions: holding cash, investing 50% of available capital, or investing 100%. The reward function encourages profitable trades while penalising portfolio drawdowns above 5%, helping the model manage risk.<br><br>Training is performed over 100,000 timesteps using experience replay and a separate target network to improve learning stability. To ensure robust results, the model is trained using three different random seeds. The seed with the highest validation Sharpe ratio is selected for final evaluation, reducing the risk of overfitting.</p>
+    <ul class="concept-desc" style="margin-top:10px;padding-left:20px;line-height:1.9">
+      <li><strong>Framework:</strong> Stable-Baselines3 DQN with Double-Q target correction.</li>
+      <li><strong>State Space:</strong> 8–9 features — <code style="font-family:var(--fm);font-size:11px">daily_return, rsi_14, macd, bb_pct_b, trend_score, allocation, days_remaining, atr_ratio, ema_ratio</code>.</li>
+      <li><strong>Action Space:</strong> Discrete(3) — Cash (0%), Half (50%), Full (100%) invested; the agent learns when to scale in and out.</li>
+      <li><strong>Network:</strong> MlpPolicy with two hidden layers of 256 units; replay buffer holds 100,000 transitions for stable off-policy learning.</li>
+      <li><strong>Seed Search:</strong> train_best_of_n runs N seeds, validates each on a held-out period, keeps the best Sharpe winner.</li>
+      <li><strong>Persistence:</strong> The winning model is serialised as a .zip via SB3's model.save() and reloaded for inference.</li>
+    </ul>
+    <div class="concept-block-label">Network Architecture</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Algorithm: DDQN (Stable-Baselines3)</span>
+      <span class="fact-pill">2 Hidden Layers × 128 units</span>
+      <span class="fact-pill">Activation: ReLU</span>
+      <span class="fact-pill">Optimizer: Adam lr=1e-4</span>
+      <span class="fact-pill">Replay Buffer: 10,000 transitions</span>
+      <span class="fact-pill">Target Update: every 1,000 steps</span>
+      <span class="fact-pill">Timesteps: 100k per seed · Seeds: best-of-3</span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">TD Loss over Timesteps — Learning Convergence</div>
+        <div class="chart-box h240"><canvas id="crisp-p4-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Policy Improvement — Backtest Sharpe per Round</div>
+        <div class="chart-box h240"><canvas id="crisp-p4-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">SHAP Feature Importance — Top 8 Drivers (all actions)</div>
+        <div class="chart-box h240"><canvas id="crisp-p4-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 5: Evaluation -->
+  <div class="crisp-panel hidden" id="crisp-p5">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">5</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 5</span>
+        <div class="concept-title">Evaluation</div>
+      </div>
+    </div>
+    <p class="concept-desc">The DDQN Reinforcement Learning model is evaluated through three separate datasets: a training period where the model learns patterns, a validation period used to select the best random seed, and a completely unseen backtest period that is reserved for final evaluation.<br><br>To reduce the risk of overfitting, the best seed is chosen using the validation Sharpe ratio rather than the backtest Sharpe ratio. Model performance is then assessed against the business requirements defined earlier in the project using four key metrics: Sharpe ratio (risk-adjusted return), maximum drawdown (largest loss from a peak), CAGR (annual growth rate), and win rate (percentage of profitable trades). Daily returns are also compared with a simple buy-and-hold investment in ASML to verify that the model generates genuine alpha rather than simply benefiting from overall market movements.<br><br>To support model interpretability, SHAP analysis is applied to explain the model's decisions. The results show that RSI(14) and the MACD line are the most influential signals driving portfolio allocation decisions. This transparency, together with the quantitative performance results, satisfies an important CRISP-DM requirement before the model can be considered for production deployment.</p>
+    <div class="concept-block-label">Evaluation Metrics</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Sharpe Ratio vs target ≥ 1.0</span>
+      <span class="fact-pill">Max Drawdown vs limit ≤ 10%</span>
+      <span class="fact-pill">CAGR %</span>
+      <span class="fact-pill">Win Rate %</span>
+      <span class="fact-pill">vs Buy &amp; Hold benchmark</span>
+      <span class="fact-pill">SHAP interpretability</span>
+    </div>
+    <div class="concept-block-label" style="margin-top:10px">Best ASML Run</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Runs recorded: <strong id="crisp-p5-runs">—</strong></span>
+      <span class="fact-pill achieved">Best Sharpe: <strong id="crisp-p5-best-sharpe">—</strong></span>
+      <span class="fact-pill achieved">Best MDD: <strong id="crisp-p5-best-mdd">—</strong></span>
+      <span class="fact-pill achieved">Best Return: <strong id="crisp-p5-best-ret">—</strong></span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Backtest Sharpe Across Runs — vs Target 1.0</div>
+        <div class="chart-box h240"><canvas id="crisp-p5-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Max Drawdown % Across Runs — vs 10% Limit</div>
+        <div class="chart-box h240"><canvas id="crisp-p5-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">DDQN vs Buy &amp; Hold — Backtest Cumulative Returns</div>
+        <div class="chart-box h240"><canvas id="crisp-p5-c3"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 6: Deployment -->
+  <div class="crisp-panel hidden" id="crisp-p6">
+    <div class="concept-phase-hdr">
+      <div class="concept-num">6</div>
+      <div>
+        <span class="badge ok">CRISP-DM Phase 6</span>
+        <div class="concept-title">Deployment</div>
+      </div>
+    </div>
+    <p class="concept-desc">RIIA runs as a Dockerised FastAPI application on a cloud VM, secured over HTTPS with OAuth-based authentication for all dashboard endpoints. The 8-step training pipeline — data validation, feature engineering, model design, training, period configuration, backtesting, results extraction, and API hot-swap — is triggered from the Build section of this dashboard and executes asynchronously, with real-time step progress streamed back to the UI via polling.<br><br>Model weights (Stable-Baselines3 PyTorch .zip artefacts) are persisted to a Docker volume, surviving container restarts and rolling deployments without requiring retraining — a critical operational requirement given 100k-timestep training cycles. The DS Lab, RITA main dashboard, FnO options dashboard, and Claude Desktop MCP server all share the same FastAPI origin, meaning every CRISP-DM artefact — raw data stats, SHAP values, backtest results — is immediately accessible across the entire platform without data duplication.</p>
+    <div class="concept-block-label">Infrastructure</div>
+    <div class="concept-facts">
+      <span class="fact-pill">FastAPI + SQLite (SQLAlchemy 2.x)</span>
+      <span class="fact-pill">Docker + Nginx (HTTPS)</span>
+      <span class="fact-pill">AWS EC2 (ap-south-1)</span>
+      <span class="fact-pill">Google OAuth + JWT</span>
+      <span class="fact-pill">8-step async pipeline</span>
+      <span class="fact-pill">Model volume: /app/data</span>
+    </div>
+    <div class="concept-block-label" style="margin-top:10px">Pipeline Observability</div>
+    <div class="concept-facts">
+      <span class="fact-pill">Steps Logged: <strong id="crisp-p6-total-steps">—</strong></span>
+      <span class="fact-pill">Failed Steps: <strong id="crisp-p6-failed-steps">—</strong></span>
+    </div>
+    <div class="divider"></div>
+    <div class="concept-chart-grid">
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Avg Step Duration (s) — 8-Step Pipeline</div>
+        <div class="chart-box h240"><canvas id="crisp-p6-c1"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Pass vs Fail Count per Pipeline Step</div>
+        <div class="chart-box h240"><canvas id="crisp-p6-c2"></canvas></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:0">
+        <div class="chart-title">Deployment Impact — Backtest Return % &amp; Sharpe Across Training Rounds</div>
+        <div class="chart-box h240"><canvas id="crisp-p6-c3"></canvas></div>
+      </div>
     </div>
   </div>
 </section>
@@ -329,9 +937,14 @@ tr:last-child td{border-bottom:none;}
      Section: Agent Performance
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="section" id="sec-agent-performance">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Agent Performance</div>
+      <div class="page-sub">Per-agent scorecards and invocation metrics <span id="igap-mode" class="badge neu">—</span></div>
+    </div>
+  </div>
+
   <div class="card">
-    <div class="card-title">Agent Performance <span id="igap-mode" class="badge neu">—</span></div>
-    <div class="card-subtitle">Per-agent scorecards and invocation metrics</div>
 
     <div class="kpi-row">
       <div class="kpi-card"><div class="kpi-val" id="igap-total">—</div><div class="kpi-lbl">Total Invocations</div></div>
@@ -357,20 +970,27 @@ tr:last-child td{border-bottom:none;}
      Section: Agent Builds
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="section" id="sec-agent-builds">
-  <div class="card">
-    <div class="card-title">Agent Builds</div>
-    <div class="card-subtitle">Pipeline run history, scorecards, and grounding trend</div>
-    <div id="igab-grid"></div>
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Agent Builds</div>
+      <div class="page-sub">Pipeline run history, scorecards, and grounding trend</div>
+    </div>
   </div>
+  <div id="igab-grid"></div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Section: Agent Panel (16-day simulation)
      ═══════════════════════════════════════════════════════════════════════ -->
 <section class="section" id="sec-agent-panel">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Agent Panel</div>
+      <div class="page-sub">6-agent ASML trading scenario <span id="igap-panel-status" class="badge neu">Ready</span></div>
+    </div>
+  </div>
+
   <div class="card">
-    <div class="card-title">Agent Panel <span id="igap-panel-status" class="badge neu">Ready</span></div>
-    <div class="card-subtitle">6-agent ASML trading simulation</div>
 
     <div style="display:flex;gap:10px;margin-bottom:14px;">
       <button id="igap-run-btn" class="btn-play" onclick="agentPanelStep()" style="font-size:12px;padding:7px 16px;">Run Day 1</button>
@@ -404,7 +1024,7 @@ tr:last-child td{border-bottom:none;}
     </div>
 
     <!-- Chart -->
-    <div class="chart-wrap" style="height:260px"><canvas id="igap-chart"></canvas></div>
+    <div class="chart-wrap" style="height:260px"><canvas id="igap-panel-chart"></canvas></div>
 
     <!-- Audit log -->
     <div class="tbl-wrap" style="margin-top:14px;">
@@ -427,6 +1047,31 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+<script>
+(function(){
+  var KEY='rita_nav_collapsed';
+  var btn=document.getElementById('nav-toggle');
+  var shell=document.querySelector('.shell');
+  var sidebar=document.querySelector('.sidebar');
+  if(!btn||!shell||!sidebar)return;
+  if(window.innerWidth>768&&localStorage.getItem(KEY)==='1')shell.classList.add('nav-collapsed');
+  btn.addEventListener('click',function(){
+    if(window.innerWidth>768){
+      var c=shell.classList.toggle('nav-collapsed');
+      localStorage.setItem(KEY,c?'1':'0');
+    } else {
+      sidebar.classList.toggle('open');
+      document.body.classList.toggle('nav-open');
+    }
+  });
+  document.addEventListener('click',function(e){
+    if(document.body.classList.contains('nav-open')&&!sidebar.contains(e.target)&&e.target!==btn){
+      sidebar.classList.remove('open');document.body.classList.remove('nav-open');
+    }
+  });
+})();
+</script>
+<script type="module" src="./js/invest-game/main.js"></script>
 <script type="module" src="./js/investgame-app/main.js"></script>
 </body>
 </html>
