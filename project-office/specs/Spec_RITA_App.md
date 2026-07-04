@@ -181,6 +181,16 @@ Two UIs exist for the same backend. Both use `MOCK_MODE` flag to bypass the real
 **To activate v2 live backend:** set `MOCK_MODE = false` in `investgame_v2.html` line ~373.
 **Nav link:** no link to v2 from main dashboard yet — access directly at `/dashboard/investgame_v2.html`.
 
+#### Invest Game App — Standalone Top-Level Page (Feature 33)
+
+| File | Path | Description | Status |
+|---|---|---|---|
+| `investgame-app.html` | `dashboard/investgame-app.html` | **Standalone app** — 6-page sidebar: Play Game (intro + link to investgame.html), Concepts (8-tab agent workflow), CRISP-DM, Agent Performance, Agent Builds, Agent Panel. Same :root CSS as RITA. No auth required — open access. | Added 2026-07-04 |
+
+**JS modules:** `dashboard/js/investgame-app/` — see Spec_JS_Code.md Section 5b.
+**Index tile:** Listed as the first tile in the Open Access zone on `index.html`.
+**Navigation removed from RITA:** The `data-s="investgame"` nav item was removed from `rita.html` sidebar — Invest Game is now accessed only via `investgame-app.html`.
+
 ### 6. `equity-scenarios.html` (Equity Scenarios — Standalone FnO-Adjacent Page)
 - **Purpose**: Stop-loss and target tracker for equity holdings. Shows urgency-sorted instrument cards with price range bars, P&L metrics, trade analysis chips, and action recommendations. Navigated to from `fno.html` sidebar.
 - **Data layer**: Static JSON files — `dashboard/data/scenarios/alerts.json`, `dashboard/data/scenarios/portfolio.json`, `dashboard/data/scenarios/tradebook.json`. No backend REST endpoint (future migration: Portfolio-tier endpoint merging the 3 JSON shapes).

@@ -203,6 +203,27 @@ Script loading: Chart.js + annotation plugin loaded via CDN (kept). Nav-collapse
 
 ---
 
+## 5b. Module Structure — `dashboard/js/investgame-app/`
+
+Standalone top-level page (`investgame-app.html`) — elevated Invest Game with 6 sidebar pages.
+
+| File | Responsibility | Key exports |
+|---|---|---|
+| `api.js` | Re-export shim to `../shared/api.js` | `api`, `apiFetch`, `apiBase` |
+| `utils.js` | Re-export shim to `../shared/utils.js` | `setEl`, `fmt`, `fmtPct`, `badge`, `randomUUID` |
+| `charts.js` | Re-export shim to `../shared/charts.js` | `mkChart`, `destroyChart`, `C`, `chartOpts` |
+| `nav.js` | Show/hide sections, sidebar toggle, active state | `show`, `registerLoader`, `toggleSidebar`, `getCurrentSection` |
+| `concepts.js` | Investment Workflow & Agents — 8 tabbed panels (ported from rita/learnings.js agent-workflow section) | `loadConcepts`, `switchAgentTab` |
+| `crisp-dm.js` | CRISP-DM methodology (ported from ds/concepts.js — phases 1, 4, 5) | `loadCrispDm`, `switchCrispTab` |
+| `agent-performance.js` | Per-agent scorecards + invocation chart (ported from rita/agent-performance.js) | `loadAgentPerformance` |
+| `agent-builds.js` | Pipeline run history + grounding trend (ported from ops/agent-builds.js) | `loadAgentBuilds` |
+| `agent-panel.js` | 16-day ASML simulation (ported from rita/agent-panel.js) | `loadAgentPanel`, `agentPanelStep`, `resetAgentPanel`, `approveAgentProposal`, `rejectAgentProposal` |
+| `main.js` | Entry point — imports all loaders, registers section loaders, exposes `window.*` bindings | (none — side-effects only) |
+
+**Section IDs:** `sec-investgame`, `sec-concepts`, `sec-crisp-dm`, `sec-agent-performance`, `sec-agent-builds`, `sec-agent-panel`
+
+---
+
 ## 5a. Module Structure — `dashboard/js/invest-game/`
 
 Standalone page (`invest-game.html`) — not mounted inside the Ops/RITA/FnO shells.

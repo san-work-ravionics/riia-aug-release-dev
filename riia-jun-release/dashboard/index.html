@@ -158,7 +158,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
         <span style="display:inline-block; width:9px; height:9px; background:var(--build); border-radius:50%; box-shadow: 0 0 6px var(--build);"></span> Open Access
       </div>
 
-      <div class="tiles" style="grid-template-columns: 1fr; gap:20px; display:grid;">
+      <div class="tiles" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; display:grid;">
+        <!-- Tile : Invest Game -->
+        <a class="tile research" href="investgame-app.html" style="margin-bottom:0; height:100%">
+          <div class="tile-accent"></div>
+          <div class="tile-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <span class="tile-tag">Learning</span>
+          <div class="tile-title">Invest Game</div>
+          <p class="tile-desc">Learn investment concepts through interactive agent simulations, CRISP-DM methodology, and performance analytics.</p>
+          <span class="tile-cta">Play Now <span class="tile-arrow">→</span></span>
+        </a>
+
         <!-- Tile : Build a Portfolio -->
         <a class="tile build" href="rita.html" style="margin-bottom:0; height:100%">
           <div class="tile-accent"></div>
