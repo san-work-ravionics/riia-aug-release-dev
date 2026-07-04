@@ -1,13 +1,17 @@
 # /enhance — Multi-Agent Feature Orchestrator
 
-Orchestrates a chain of specialist agents to plan, build, test, and document a feature enhancement for the RITA, FnO, Ops, or DS dashboard.
+Orchestrates a chain of specialist agents to plan, build, test, and document a change. Two tracks:
+- **UI track** (`rita`, `fno`, `ops`, `ds`) — a dashboard feature: API endpoint + JS module + HTML section.
+- **Core/ML track** (`core`, `rl`, `ml`) — a change to `src/rita/core/` (or `services/`/`repositories/`) logic + tests, with **no endpoint/JS/HTML required** (e.g. RL reward/env, metrics, ML dispatch). See Step 0 and Appendix C.
 
-**Usage:** `/enhance <app> "<description>"`
+**Usage:** `/enhance <app|track> "<description>"`
 **Examples:**
 - `/enhance rita "Add a volatility regime indicator to the market signals panel"`
 - `/enhance fno "Add a net Greeks exposure summary to the portfolio overview"`
 - `/enhance ops "Add a failed test trend chart to the test results section"`
 - `/enhance ds "Feature 10 Phase 4 — extract ds.html inline scripts into dashboard/js/ds/ ES modules"`
+- `/enhance core "Feature 32 Phase 3.5 — realign RIIATradingEnvV2 reward to optimise Sharpe>1 & MDD<10% (not profit); fix train/eval timing; golden env frozen"`
+- `/enhance rl "Add a Differential Sharpe Ratio reward path to trading_env_v2 with a held-out test split"`
 
 ---
 
@@ -20,13 +24,22 @@ You are the orchestrator. Read these instructions fully before taking any action
 ## Step 0 — Parse Arguments
 
 Parse `$ARGUMENTS` to extract:
-- `APP` — the first word (must be one of: `rita`, `fno`, `ops`, `ds`)
+- `APP` — the first word (must be one of: `rita`, `fno`, `ops`, `ds`, `core`, `rl`, `ml`)
 - `DESCRIPTION` — everything after the first word (strip surrounding quotes)
 
-If `APP` is not one of the four valid values, reply:
-> "Unknown app '{APP}'. Valid apps: rita, fno, ops, ds. Usage: /enhance <app> \"<description>\""
+If `APP` is not one of the valid values, reply:
+> "Unknown app '{APP}'. Valid: rita, fno, ops, ds (UI track) · core, rl, ml (Core/ML track). Usage: /enhance <app> \"<description>\""
 
 Then stop.
+
+**Determine `TRACK` from `APP` — this is the most important branch in the whole command:**
+
+| `APP` value | `TRACK` | What the run builds |
+|---|---|---|
+| `rita`, `fno`, `ops`, `ds` | `ui` | A dashboard feature: API endpoint + JS module + HTML section |
+| `core`, `rl`, `ml` | `core` | A change to `src/rita/core/` (or `services/`, `repositories/`) logic + tests — **no endpoint, no JS, no HTML required** |
+
+`TRACK` selects which variant of Steps 3, 3.5, 4, 4.5, 5, 6 you run. **Each of those steps begins with a TRACK banner — when `TRACK = core`, follow the Core/ML variant in Appendix C for that step instead of the UI content.** Steps 0, 1, 2, 6.5, 7 are track-agnostic (with one Step-1a branch noted below).
 
 **Routing table — select skill + spec based on APP:**
 
@@ -36,6 +49,7 @@ Then stop.
 | `fno` | `project-office/skills/skill-add-fno-feature.md` | `project-office/specs/Spec_RITA_App.md` | `project-office/specs/Spec_JS_Code.md` |
 | `ops` | `project-office/skills/skill-add-ops-feature.md` | `project-office/specs/Spec_RITA_App.md` | `project-office/specs/Spec_JS_Code.md` |
 | `ds` | `project-office/skills/skill-add-ds-feature.md` | `project-office/specs/Spec_RITA_App.md` | `project-office/specs/Spec_JS_Code.md` |
+| `core` / `rl` / `ml` | `project-office/skills/skill-add-core-feature.md` | `project-office/specs/Spec_Python_Code.md` | `project-office/specs/Spec_Data.md` |
 
 Set:
 - `SKILL_FILE` = skill file path from routing table
@@ -65,27 +79,40 @@ If no `<usage>` block appears in the result, store `null` for that role.
 
 ## Step 1 — Create Task Brief + Feature Folder
 
-### Step 1a — Auto-create feature folder
+### Step 1a — Resolve the feature folder
 
-Identify the next available feature number in `project-office/features/May/`:
-```bash
-ls project-office/features/May/ | grep -E '^[0-9]+' | sort -n | tail -1
-```
-Set `FEATURE_NUM` = that number + 1 (zero-pad to 2 digits if ≤ 9).  
-Set `FEATURE_FOLDER` = `project-office/features/May/{FEATURE_NUM} {APP}-{DESCRIPTION[:30].replace(' ','-').lower()}/`
+**Branch on whether the description references an existing feature.**
 
-Create the folder and copy the three template stubs:
+First scan the description for an existing-feature reference: a token like `Feature NN`, `FNN`, `Phase N`, `continuation`, `resume`, `re-open`, or an explicit existing folder name. Search all month folders (`project-office/features/*/`) for a matching feature folder:
 ```bash
-mkdir -p "{FEATURE_FOLDER}"
-cp project-office/features/TEMPLATE/REQUIREMENTS.md "{FEATURE_FOLDER}/REQUIREMENTS.md"
-cp project-office/features/TEMPLATE/PLAN_STATUS.md  "{FEATURE_FOLDER}/PLAN_STATUS.md"
-cp project-office/features/TEMPLATE/eng-context.md  "{FEATURE_FOLDER}/eng-context.md"
+ls -d project-office/features/*/*/ | grep -iE '<feature-number-or-name from description>'
 ```
 
-In `{FEATURE_FOLDER}/REQUIREMENTS.md` replace the title placeholders:
-- `Feature NN` → `Feature {FEATURE_NUM}`
-- `{Feature Name}` → `{APP} — {DESCRIPTION[:50]}`
-- `{YYYY-MM-DD}` → `{TIMESTAMP[:8]}` formatted as `YYYY-MM-DD`
+**Case A — existing feature referenced (reopen, do NOT mint a new number).** Common for `TRACK = core` continuation work.
+- Set `FEATURE_FOLDER` = the matched existing folder (e.g. `project-office/features/Jun/32 riia-agent-performance-rl/`).
+- Set `FEATURE_NUM` = that feature's existing number.
+- Do **not** copy template stubs — the folder already has `REQUIREMENTS.md` / `PLAN_STATUS.md`. Instead, in `PLAN_STATUS.md` flip the relevant phase/overall status to `[~] reopened {TIMESTAMP[:8]}` and append a Session-Log row noting this `/enhance` run is reopening the feature. If the description names a phase/sub-task not yet in `REQUIREMENTS.md`, append it there.
+
+**Case B — no existing feature referenced (auto-create new).** Default for fresh `TRACK = ui` features.
+- Identify the next available feature number:
+  ```bash
+  ls project-office/features/May/ | grep -E '^[0-9]+' | sort -n | tail -1
+  ```
+  Set `FEATURE_NUM` = that number + 1 (zero-pad to 2 digits if ≤ 9).
+- Set `FEATURE_FOLDER` = `project-office/features/May/{FEATURE_NUM} {APP}-{DESCRIPTION[:30].replace(' ','-').lower()}/`
+- Create the folder and copy the three template stubs:
+  ```bash
+  mkdir -p "{FEATURE_FOLDER}"
+  cp project-office/features/TEMPLATE/REQUIREMENTS.md "{FEATURE_FOLDER}/REQUIREMENTS.md"
+  cp project-office/features/TEMPLATE/PLAN_STATUS.md  "{FEATURE_FOLDER}/PLAN_STATUS.md"
+  cp project-office/features/TEMPLATE/eng-context.md  "{FEATURE_FOLDER}/eng-context.md"
+  ```
+- In `{FEATURE_FOLDER}/REQUIREMENTS.md` replace the title placeholders:
+  - `Feature NN` → `Feature {FEATURE_NUM}`
+  - `{Feature Name}` → `{APP} — {DESCRIPTION[:50]}`
+  - `{YYYY-MM-DD}` → `{TIMESTAMP[:8]}` formatted as `YYYY-MM-DD`
+
+Carry `FEATURE_FOLDER` and `FEATURE_NUM` forward — the Architect (core track) reads `{FEATURE_FOLDER}/REQUIREMENTS.md` for the design contract.
 
 ### Step 1b — Create Task Brief
 
@@ -96,17 +123,20 @@ Create `{BRIEF_PATH}` by copying the template and filling in the header block:
 - Replace `{YYYYMMDD-HHMM}` with `{TIMESTAMP}`
 - Replace `{in-progress | complete | failed}` with `in-progress`
 - Replace the `## Request` placeholder with the exact `DESCRIPTION` text
-- Replace the `## App Target` placeholder with `{APP}`
+- Replace the `## App Target` placeholder with `{APP} (TRACK: {TRACK})`
 - Replace the skill file path with `{SKILL_FILE}`
 - Replace the spec references with the correct paths for `{APP}`
+
+For `TRACK = core`, also add a line under `## App Target`: `Feature folder: {FEATURE_FOLDER}` so every agent can find the design contract (REQUIREMENTS.md) for the reopened feature.
 
 Leave all agent sections (`[PM]`, `[Architect]`, `[Engineer]`, `[QA]`, `[TechWriter]`) as template placeholders — each agent will fill in its own section.
 
 Report to user:
 ```
 ── Orchestrator ──────────────────────────────────────────
-✓ App identified: {APP}
+✓ App identified: {APP}   (TRACK: {TRACK})
 ✓ Skill selected: {SKILL_FILE}
+✓ Feature folder: {FEATURE_FOLDER}
 ✓ Task brief created: {BRIEF_PATH}
 ─────────────────────────────────────────────────────────
 ```
@@ -173,6 +203,8 @@ Check: does `Approved to proceed:` equal `yes`?
 ---
 
 ## Step 3 — Architect Agent + TechWriter (Design Recording)
+
+> **TRACK BRANCH — read first.** If `TRACK = core`, do NOT use the UI content in this step. Follow **Appendix C-3** (Architect, Core/ML variant) and **Appendix C-3.5** (validation gate, Core/ML variant), then run Step 3b (TechWriter recording) unchanged. If `TRACK = ui`, continue below.
 
 ### Step 3a — Architect Agent
 
@@ -259,6 +291,8 @@ Report `✓ Architect Agent — design complete and recorded` and proceed to Ste
 ---
 
 ## Step 3.5 — Design Reviewer Agent
+
+> **TRACK BRANCH.** If `TRACK = core`, use the Design-Review checklist in **Appendix C-3.5b** (Core/ML) instead of the UI checklist below — same PASS/FAIL gate mechanics and retry rules. If `TRACK = ui`, continue below.
 
 Spawn a `general-purpose` agent with this prompt:
 
@@ -356,6 +390,8 @@ Read `{BRIEF_PATH}` — find the `[Reviewer] Design Review` section. Check `Deci
 ---
 
 ## Step 4 — Engineer Agent
+
+> **TRACK BRANCH.** If `TRACK = core`, use the Engineer prompt and validation gate in **Appendix C-4** (Core/ML) instead of the UI content below. The Step-4 user confirmation pause, branch/commit gates, and `RUN_BRANCH` assignment still apply identically. If `TRACK = ui`, continue below.
 
 Spawn a `general-purpose` agent with `isolation: "worktree"` and this prompt:
 
@@ -503,6 +539,8 @@ Report the Engineer summary and wait for confirmation:
 
 ## Step 4.5 — Code Reviewer Agent
 
+> **TRACK BRANCH.** If `TRACK = core`, use the Code-Review checklist in **Appendix C-4.5** (Core/ML) instead of the UI checklist below — same PASS/CONDITIONAL/FAIL gate and retry rules. If `TRACK = ui`, continue below.
+
 Spawn a `general-purpose` agent with this prompt:
 
 ```
@@ -599,6 +637,8 @@ Read `{BRIEF_PATH}` — find the `[Reviewer] Code Review` section. Check `Decisi
 
 ## Step 5 — QA Agent
 
+> **TRACK BRANCH.** If `TRACK = core`, use the QA prompt in **Appendix C-5** (Core/ML) instead of the UI content below — it tests core/numerical behaviour and a design-contract check rather than an API-frontend contract. If `TRACK = ui`, continue below.
+
 Spawn a `general-purpose` agent with this prompt:
 
 ```
@@ -667,6 +707,8 @@ Report `✓ QA Agent — {n} tests, {n} passed` (or flag failures as warnings).
 ---
 
 ## Step 6 — TechWriter Agent
+
+> **TRACK BRANCH.** If `TRACK = core`, use the TechWriter task in **Appendix C-6** (Core/ML) — it confirms `Spec_Python_Code.md` + the feature design doc/REQUIREMENTS are current instead of a dashboard endpoint table. Confluence remains optional (n/a if key absent). If `TRACK = ui`, continue below.
 
 Spawn a `general-purpose` agent with this prompt:
 
@@ -876,3 +918,224 @@ Report the completed run to the user:
 - **Ruff failures, spec not updated**: warn but continue — these are quality issues, not blockers.
 - **QA test failures**: warn and continue — tests are logged in the brief for the user to review.
 - **TechWriter Confluence unreachable**: log as "n/a" and continue — not a blocker.
+- **(Core track) Golden env edited**: BLOCKING — if the Engineer's diff touches `src/rita/core/trading_env.py` or any `rita_ddqn_model.zip` artifact, halt and send the Engineer back. The June-release golden model is frozen (see `skill-add-core-feature.md`).
+- **(Core track) Tests missing**: a core change with no new/updated test in `tests/` is treated like "ruff failed" — warn loudly; if the change is to `core/` calculation/ML logic, escalate to BLOCKING and re-invoke the Engineer.
+
+---
+
+## Appendix C — Core/ML Track (used when `TRACK = core`)
+
+This appendix replaces the UI content of Steps 3, 3.5, 4, 4.5, 5, 6 when `APP ∈ {core, rl, ml}`. The orchestration mechanics (validation gates, retry counts, user pauses, `AGENT_RESULTS` records, run log) are identical — only the agent prompts and the *content* of the checks change from "API endpoint + JS + HTML" to "core module + algorithm + tests".
+
+The guiding contract for this track is **`project-office/skills/skill-add-core-feature.md`** (this is `{SKILL_FILE}` for the core track) plus **`{FEATURE_FOLDER}/REQUIREMENTS.md`** (the design contract for the reopened feature).
+
+---
+
+### Appendix C-3 — Architect Agent (Core/ML variant)
+
+Spawn a `Plan` agent with this prompt:
+
+```
+You are the Architect Agent for the RITA project. This is a CORE/ML change (TRACK: core), not a dashboard feature — there is NO API endpoint, JS module, or HTML section to design unless the requirement explicitly asks for one.
+
+Read these files in order:
+1. {BRIEF_PATH} — focus on ## Request, ## App Target, ## Skill Selected
+2. {SKILL_FILE} (skill-add-core-feature.md) — read fully (core module map, golden-frozen rule, repository pattern, test + numerical-validation conventions, the Sharpe>1 & MDD<10% objective)
+3. {FEATURE_FOLDER}/REQUIREMENTS.md — the feature's objective, findings, and acceptance criteria (this is your design contract)
+
+You make design decisions — do not implement code and do not write files.
+
+Produce a complete design covering ALL of the following, clearly labelled so it can be recorded:
+
+1. Feature summary: 1-2 sentences — what behaviour/metric changes and for whom.
+
+2. Approach & algorithm: the concrete technical design. For an RL/ML change, state the math/formulation explicitly — reward terms (with formulas), observation/feature changes, training/evaluation changes, hyper-parameters touched, and WHY each change moves the graded objective (e.g. Sharpe>1 & MDD<10%, NOT profit). List at least 2 concrete, reviewable design decisions. If an API/UI surface IS genuinely required to expose results, specify it here; otherwise write "API/UI surface: none — core change only".
+
+3. Module targets: every module/class/function that will change or be added, with the new/changed signature. Format: `path::symbol — what changes`. At least 1 module and 1 symbol.
+
+4. Files to touch: list every file to create or modify, each with a one-line description. MUST include at least one source file under `src/rita/` AND at least one test file under `tests/`. Include the spec/doc files to update (`Spec_Python_Code.md` and any design doc under `docs/`).
+
+5. Edge cases / numerical risks: at least 2 (e.g. empty/short data window, NaN indicators, divide-by-zero in a ratio, train/eval distribution mismatch, non-determinism).
+
+6. Definition of Done checklist: the items from skill-add-core-feature.md for a core change — mark none as checked (Engineer will check them). MUST include the golden-frozen guard item.
+
+Report: your complete design output. Do not write to any file.
+```
+
+**After the Architect agent completes:** capture the full output as `ARCHITECT_DESIGN` and proceed to the Core validation gate (Appendix C-3.5).
+
+---
+
+### Appendix C-3.5 — Architect validation gate (Core/ML variant)
+
+Validate `ARCHITECT_DESIGN` against these checks (this REPLACES the UI gate's API/frontend checks):
+
+| Check | Pass condition |
+|---|---|
+| Feature summary present | Not empty |
+| Approach & algorithm present | At least 2 concrete design decisions; for an RL/ML reward change, at least one explicit formula or rule |
+| Module targets present | At least 1 `path::symbol` with a signature/behaviour change |
+| Files to touch listed | At least 2 files, including ≥1 under `src/rita/` AND ≥1 under `tests/` |
+| Edge cases listed | At least 2 numerical/data edge cases |
+| Objective alignment stated | The design says how the change moves the graded metric (e.g. Sharpe/MDD), not just "improves performance" |
+
+- If **any fail**: re-invoke the Architect agent with the failed checks listed; re-validate. Second failure → escalate to user and stop (same wording as the UI gate, substituting "design" appropriately).
+- On pass: run **Step 3b (TechWriter — Record Architect Design)** exactly as written in the main flow (it is track-agnostic — it just records `ARCHITECT_DESIGN` into the `[Architect] Design` section of the brief), then proceed to Step 3.5 using **Appendix C-3.5b**.
+
+Record the Architect `AGENT_RESULTS` entry as in the main flow, but set `grounding_checks` to: `{ "approach_present": ..., "module_targets_present": ..., "files_listed": ..., "objective_alignment_stated": ... }`.
+
+---
+
+### Appendix C-3.5b — Design Reviewer checklist (Core/ML variant)
+
+Spawn the Design Reviewer `general-purpose` agent exactly as in Step 3.5, but replace the checklist in its prompt with:
+
+```
+Run the Core/ML Design Review checklist:
+1. Requirements coverage — does every requirement/finding in {FEATURE_FOLDER}/REQUIREMENTS.md have a design element?
+2. Objective alignment — does the design target the GRADED metric (e.g. Sharpe>1 & MDD<10%), and explicitly NOT profit-maximisation? Flag any reward/term that optimises the wrong objective.
+3. Approach soundness — is the algorithm/formulation internally consistent and reviewable (formulas/rules stated, not hand-waved)? Are train and eval consistent (no train/serve skew)?
+4. Golden-frozen safety — does the design avoid editing src/rita/core/trading_env.py or any golden model artifact? (New work must live in a parallel module, e.g. *_v2.)
+5. Files-to-touch completeness — source (≥1 under src/rita/) + tests (≥1 under tests/) + spec/doc all listed?
+6. Definition of Done populated — real items incl. the golden-frozen guard, not template placeholders?
+```
+
+Same PASS/FAIL decision, retry-once-then-escalate mechanics, and `AGENT_RESULTS` recording as the UI Step 3.5 (use `failure_modes` DR-001..DR-006 mapping to the six checks above).
+
+---
+
+### Appendix C-4 — Engineer Agent (Core/ML variant)
+
+Spawn a `general-purpose` agent with `isolation: "worktree"` and this prompt:
+
+```
+You are the Engineer Agent for the RITA project, working in an isolated git worktree. This is a CORE/ML change (TRACK: core).
+
+IMPORTANT — WORKTREE RULES (identical to the UI track):
+- Run `git rev-parse --show-toplevel` first — all edits stay inside this worktree root.
+- Run `git branch --show-current` — record your branch name (must not be master/main).
+
+Read these files in order:
+1. {BRIEF_PATH} — focus on [Architect] Design (Approach & algorithm, Module targets, Files to touch, DoD)
+2. {SKILL_FILE} (skill-add-core-feature.md) — read fully (golden-frozen rule, core module map, repository pattern, ruff + test + numerical-validation conventions)
+3. {FEATURE_FOLDER}/REQUIREMENTS.md — acceptance criteria you must satisfy
+
+Your job: implement the core change exactly as designed. Follow every rule in the skill file.
+
+Implementation order:
+1. Confirm worktree root and branch.
+2. **Golden-frozen guard — do this BEFORE editing anything.** You may NOT modify src/rita/core/trading_env.py or any rita_ddqn_model.zip. New behaviour goes in a parallel module (e.g. trading_env_v2.py) or a clearly additive function. If the design appears to require editing the golden file, STOP and report — do not edit it.
+3. Implement the source change under src/rita/ per the Module targets table (correct layer: core/ for calculation/ML, services/ for orchestration, repositories/ for data access — no direct DB/file I/O in routes/services per ADR-002).
+4. Add or extend unit tests under tests/ that assert the new BEHAVIOUR/numerics — not just that it imports. For an RL reward change, include at least one test that pins the intended property (e.g. causal train/eval alignment; the MDD penalty engages at the constraint; reward sign under a known input).
+5. Run `python -m pytest <your new/changed test files> -q` from riia-jun-release/ — all must pass.
+6. Run `ruff check src/` — fix any errors.
+7. If you added/changed a migration, apply it (`python -m alembic upgrade head` from riia-jun-release/) and surface the revision for the post-merge note — same hard gate as the UI track.
+8. Update project-office/specs/Spec_Python_Code.md (and any docs/ design doc named in Files-to-touch) to reflect the change.
+
+Commit to your branch:
+- Stage each changed file; commit `feat(core): {1-line description}`; confirm with `git log --oneline -3`.
+- Run `git diff --name-only master...HEAD` (or against the base) and CONFIRM trading_env.py / golden artifacts are NOT in the list. Paste this list into your log.
+
+Fill in the [Engineer] Implementation Log section of {BRIEF_PATH}:
+- Branch / Worktree path / Files changed / Commit hash
+- Tests added: list test names + pass count (n/n)
+- Ruff result: passed/failed
+- Golden-frozen confirmed: yes (paste the changed-file list proving trading_env.py is untouched)
+- Spec/doc updated: yes/no
+
+Then check each DoD item from the Architect section. Do not mark complete with any item unchecked.
+
+Save the brief. Report: "Engineer section complete. Branch: {branch}. Commit: {hash}. Tests: {n}/{n}. Golden-frozen: yes/no. DoD: {n}/{n} passed."
+```
+
+**After the Engineer completes — Core validation gate** (replaces the UI files/spec checks):
+
+| Check | Pass condition |
+|---|---|
+| Branch present | Not empty, not master/main |
+| Commit hash present | Not empty |
+| Files changed listed | ≥2, including ≥1 under `src/rita/` and ≥1 under `tests/` |
+| Tests added & passing | ≥1 new/changed test, all passing (if failing → warn, log to brief) |
+| Ruff result | "passed" (else warn, add FC-003) |
+| Golden-frozen confirmed | `trading_env.py` and golden `.zip` NOT in the changed-file list — **BLOCKING if violated**: re-invoke Engineer to revert the golden edit |
+| Spec/doc updated | "yes"; independently confirm by grepping `Spec_Python_Code.md` (or the named design doc) for the changed symbol — same FC-001 self-report guard as the UI track |
+
+Branch=master, missing commit → halt (same as UI). Then apply the **Step-4 confirmation pause** (present the Engineer summary, wait for "ok"/"stop") exactly as in the main flow, set `RUN_BRANCH`, and record the Engineer `AGENT_RESULTS` entry with core `grounding_checks`: `{ branch_created, tests_added_passing, ruff_passed, golden_frozen_confirmed, spec_updated }`.
+
+---
+
+### Appendix C-4.5 — Code Reviewer checklist (Core/ML variant)
+
+Spawn the Code Reviewer `general-purpose` agent as in Step 4.5, but read `engineer.md` + `project.md` + `skill-add-core-feature.md` and ONLY the files in the Engineer's changed list, and run this checklist:
+
+```
+Run the Core/ML Code Review checklist:
+1. Implementation matches design — do the changed symbols/signatures match the Architect's Module targets? Does the algorithm/reward in code match the formulas in the design?
+2. Objective alignment in code — does the implemented reward/metric optimise the graded objective (Sharpe/MDD), with no leftover profit-maximising term contradicting it?
+3. Train/eval consistency — for an RL change, is the data/return alignment the SAME in training and evaluation/inference (no contemporaneous-vs-next-bar skew)?
+4. Golden-frozen — confirm via the changed-file list / git that trading_env.py and golden artifacts are untouched.
+5. Engineer guardrails — worktree branch (not master); correct layer (core/services/repositories per ADR-002); no print(); no hardcoded secrets/lot sizes; ruff passed.
+6. Tests present & meaningful — at least one test asserts the new behaviour/property, not just import; spec/doc updated (grep to verify).
+```
+
+Same PASS/CONDITIONAL/FAIL decision and retry mechanics as UI Step 4.5; `failure_modes` CR-001..CR-006 map to the checks above; CR-004 reserved for golden-frozen violation (treat as BLOCKING).
+
+---
+
+### Appendix C-5 — QA Agent (Core/ML variant)
+
+Spawn a `general-purpose` agent with this prompt:
+
+```
+You are the QA Agent for the RITA project. This is a CORE/ML change (TRACK: core) — there is no API-frontend contract to check; you verify BEHAVIOUR and numerics.
+
+Read these files:
+1. {BRIEF_PATH} — read fully (Architect Approach & algorithm + edge cases; Engineer Files changed + tests added)
+2. {FEATURE_FOLDER}/REQUIREMENTS.md — the acceptance criteria the change must meet
+3. The specific source files in the Engineer's "Files changed" list (read them to get exact symbol names/signatures before writing tests — a test importing the wrong path always fails)
+
+Your job:
+1. Write/extend unit tests in tests/ that cover: the happy path + at least 1 edge case from the Architect's list + at least 1 test that pins the change's intended PROPERTY (e.g. for a reward change: the penalty engages at the MDD constraint; train and eval use the same return alignment; reward monotonicity/sign under a constructed input). Use pytest; build small synthetic DataFrames/arrays rather than relying on full datasets where possible; seed any RNG for determinism.
+2. Design-contract check (replaces the API-frontend contract): list the symbols/signatures the Architect specified in Module targets, and confirm the implemented code exposes exactly those (name, args, return shape). Flag any mismatch as a failure.
+3. Run: pytest tests/unit/ -q (plus any new test path). Record tests written, passed, failures.
+
+Fill in the [QA] Test Results section of {BRIEF_PATH}:
+- Tests written: n / Test file: path / Tests passed: n/n
+- Coverage delta: estimate from pytest output
+- Design-contract table: Architect symbol vs implemented symbol vs match
+- Edge/property cases tested: list each, note tested/not tested
+- Acceptance-criteria check: for each acceptance criterion in REQUIREMENTS.md that is testable now, note met / not-yet / needs-training-run
+
+Save the brief. Report: "QA section complete. Tests: {n}/{n} passed. Design-contract: match/mismatch."
+```
+
+After QA completes, record the QA `AGENT_RESULTS` entry as in the UI flow, with `grounding_checks`: `{ tests_written, tests_passed, design_contract_done, acceptance_checked }`. FC-004 = design-contract mismatch.
+
+---
+
+### Appendix C-6 — TechWriter Agent (Core/ML variant)
+
+Spawn a `general-purpose` agent with this prompt:
+
+```
+You are the TechWriter Agent for the RITA project. This is a CORE/ML change (TRACK: core).
+
+Read these files in order:
+1. {BRIEF_PATH} — the full brief
+2. project-office/context/confluence-guide.md — Confluence publish instructions (optional)
+
+Tasks:
+1. Confirm project-office/specs/Spec_Python_Code.md reflects the changed/added core symbols (the Engineer should have done this — if not, update it now).
+2. Confirm any design doc under docs/ named in the brief's Files-to-touch is current (e.g. the RL design doc reflects the new reward/algorithm). Update {FEATURE_FOLDER}/PLAN_STATUS.md: mark the worked tasks done and add a Session-Log row for this /enhance run (branch + commit).
+3. Confluence (optional): if the Engineering page is relevant AND project-office/confluence-api-key.txt exists, update it. If the key file is absent (expected in the aug workspace), record "n/a — key not present in aug workspace" and continue.
+
+Fill in the [TechWriter] Documentation section of {BRIEF_PATH}:
+- Spec file confirmed current: yes/no (Spec_Python_Code.md)
+- Design doc / PLAN_STATUS updated: yes/no — which files
+- Confluence page updated: URL or "n/a — reason"
+- Task brief archived: yes (set the brief Status to "complete")
+
+Save the brief. Report: "TechWriter section complete."
+```
+
+After completion, set the brief Status to `complete` and record the TechWriter `AGENT_RESULTS` entry with `grounding_checks`: `{ spec_file_confirmed, design_doc_updated, confluence_updated }`.
