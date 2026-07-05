@@ -25,6 +25,8 @@ This document outlines the architecture, design constraints, and purposes of the
 - **Key Sections**:
   - Hero banner with system readiness status.
   - **Demo / Live auth toggle** (`#auth-toggle-switch`, default: Live / checked): controls how tile navigation is authenticated. On **localhost** tiles navigate directly regardless of toggle. In **Live** mode, tiles check `auth_token` and redirect to `/auth/google/login` if absent. In **Demo** mode, tiles call `POST /auth/token {username:'webmaster@ravionics.nl', password:'rita-dev'}` to mint a JWT for the shared demo account, store it, then navigate — no Google OAuth needed. Demo mode exercises every function including Ops (all access flags are True on the demo user).
+  - **Open Access zone** (no auth):
+    1. **Invest Game** -> routes to `investgame-app.html`
   - Four primary navigation tiles (`.protected-route`):
     1. **Research (Data Scientist Lab)** -> routes to `ds.html`
     2. **Portfolio Builder (RITA core)** -> routes to `rita.html`
@@ -136,7 +138,23 @@ Reads `riia_agent_history` from localStorage. Three sub-tabs. Driven by `ai-comp
   - **Observability & Chat Analytics**: Model drift monitoring and query volume logs for the chat-based RITA assistant.
   - **Risk** (`#sec-risk`, formerly "Daily Ops" — renamed `1ee6105`): Portfolio risk overview rendered above the Manoeuvre section (risk-first layout). Driven by `ops/risk.js`. Components: (1) KPI strip — net delta, theta, vega, unrealised P&L; (2) open positions table; (3) stress scenarios table; (4) hedge quality score chips. Below a divider: Manoeuvre section (snapshots, action log, history).
 
-### 5. `ds.html` (Data Scientist Lab)
+### 5. `investgame-app.html` (Invest Game App)
+- **Purpose**: Standalone top-level app aggregating the Invest Game, learning content, and agent dashboards into a unified sidebar experience. Open access (no auth).
+- **Tile**: First tile in the Open Access zone on `index.html`.
+- **Shell**: Same grid layout as `rita.html` / `ops.html` — topbar + collapsible sidebar + content area.
+- **Sidebar pages** (7 sections):
+  - **Invest Game** (`sec-investgame`): Welcome intro with link to play.
+  - **Journey** (`sec-journey`): Investor journey flow via lazy-loaded iframe.
+  - **Concepts** (`sec-concepts`): 8-tab agent workflow with Chart.js charts (NIFTY data).
+  - **CRISP-DM** (`sec-crisp-dm`): 6-phase CRISP-DM methodology (ASML data).
+  - **Agent Performance** (`sec-agent-performance`): Per-agent RL scorecards + KPIs.
+  - **Agent Builds** (`sec-agent-builds`): Build run history, grounding charts, token estimates.
+  - **Agent Panel** (`sec-agent-panel`): 16-day ASML multi-agent simulation demo.
+- **JS architecture**: ES modules at `dashboard/js/investgame-app/` — imports from `shared/api.js`, `shared/charts.js`, `shared/utils.js`, `shared/i18n.js`, `shared/dev-auth.js`.
+- **Entry point**: `<script type="module" src="./js/investgame-app/main.js"></script>`
+- **Full spec**: See `Spec_Invest_Game.md` §10 for detailed module structure and nav map.
+
+### 6. `ds.html` (Data Scientist Lab)
 - **Purpose**: The advanced view for model developers to tweak the reinforcement learning model, re-train hyperparameters, and iterate on features.
 - **File size**: ~2,900 lines. **DO NOT re-read the file** — use this spec instead. Only open specific line ranges when actually editing code.
 

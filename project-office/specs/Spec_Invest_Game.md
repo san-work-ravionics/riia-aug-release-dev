@@ -337,31 +337,78 @@ After writing the run file, triggers `aggregate_metrics.py` (if it exists) as a 
 
 ---
 
-## 10. Related Files
+## 10. Invest Game App — Standalone Top-Level Page (Feature 33)
+
+The Invest Game is also accessible via a dedicated standalone app (`investgame-app.html`) with its own sidebar navigation. This app aggregates game, learning, and agent content into a single cohesive experience.
+
+| Aspect | Detail |
+|---|---|
+| **Page** | `dashboard/investgame-app.html` |
+| **JS modules** | `dashboard/js/investgame-app/` (ES modules, imports from `shared/`) |
+| **Tile** | First tile in Open Access zone on `index.html` |
+| **Auth** | None — open access |
+| **Sidebar pages** | 7 (see below) |
+
+### Sidebar Navigation
+
+| Nav item | Section id | Loader | Content |
+|---|---|---|---|
+| Invest Game | `sec-investgame` | _(none — static intro)_ | Welcome intro + link to play |
+| Journey | `sec-journey` | iframe lazy-load | Investor journey flow |
+| Concepts | `sec-concepts` | `loadConcepts()` | 8-tab agent workflow charts (NIFTY) |
+| CRISP-DM | `sec-crisp-dm` | `loadCrispDm()` | 6-phase CRISP-DM methodology (ASML) |
+| Agent Performance | `sec-agent-performance` | `loadAgentPerformance()` | Per-agent scorecards + KPIs |
+| Agent Builds | `sec-agent-builds` | `loadAgentBuilds()` | Build runs, grounding, token estimates |
+| Agent Panel | `sec-agent-panel` | `loadAgentPanel()` | 16-day ASML multi-agent simulation |
+
+### JS Module Structure — `dashboard/js/investgame-app/`
+
+| File | Responsibility |
+|---|---|
+| `main.js` | Entry point — registers loaders, exposes to `window`, init |
+| `nav.js` | `show()`, `toggleSidebar()`, `registerLoader()` |
+| `concepts.js` | 8 agent tabs with Chart.js (NIFTY data) |
+| `crisp-dm.js` | 6 CRISP-DM phases with charts (ASML data) |
+| `agent-performance.js` | RL agent scorecards + invocation timeline |
+| `agent-builds.js` | Build history, grounding, token forecast |
+| `agent-panel.js` | Step-through ASML simulation (16 days) |
+| `api.js` | API helper (shared with `shared/api.js`) |
+| `charts.js` | Chart helpers (shared with `shared/charts.js`) |
+| `utils.js` | DOM helpers |
+
+### Relationship to `rita.html`
+
+The invest game section was **removed from `rita.html`** (Feature 33 Phase 6). The standalone `investgame.html` game page remains unchanged — the app's "Invest Game" nav links to it directly.
+
+---
+
+## 11. Related Files
 
 | File | Purpose |
 |---|---|
-| `dashboard/investgame.html` | Production game page (v1) |
-| `dashboard/investgame_v2.html` | UI v2 redesign (work in progress, 803 lines) |
-| `dashboard/investgame.html.bak` | Backup of earlier version |
-| `dashboard/js/invest-game/main.js` | Game logic & state management |
-| `dashboard/js/invest-game/api.js` | API client & mock data |
+| `dashboard/investgame.html` | Production game page (v1) — standalone, no sidebar |
+| `dashboard/investgame-app.html` | Invest Game App — top-level sidebar app (Feature 33) |
+| `dashboard/investgame_v2.html` | UI v2 redesign (work in progress) |
+| `dashboard/js/invest-game/main.js` | Game logic & state management (for `investgame.html`) |
+| `dashboard/js/invest-game/api.js` | API client & mock data (for `investgame.html`) |
+| `dashboard/js/investgame-app/` | ES module suite for `investgame-app.html` |
 | `src/rita/api/experience/invest_game.py` | Backend router + agent chain |
-| `data/raw/ASML/asml_2001-2026.csv` | ASML price history (columns: date, Open, High, Low, Close, Volume) |
-| `data/raw/NVIDIA/nvda_daily_25yr_rounded.csv` | NVIDIA price history (columns: Date, Open, High, Low, Close, Volume) |
+| `data/raw/ASML/asml_2001-2026.csv` | ASML price history |
+| `data/raw/NVIDIA/nvda_daily_25yr_rounded.csv` | NVIDIA price history |
 | `data/agent-ops/runs/` | Run log output directory |
-| `project-office/features/May/02 invest-game/task-brief-invest-game.md` | Feature task brief & build audit trail |
+| `project-office/features/Jul/33 invest-game-app-elevation/` | Feature 33 plan + requirements |
 | `mobileapp/investor-flow/v2/invest-dashboard.html` | Mobile variant (separate feature) |
 
 ---
 
-## 11. Design Decisions & Constraints
+## 12. Design Decisions & Constraints
 
-1. **Standalone page** — No sidebar, no section-loader, no shared nav. Single `<main>` layout.
+1. **Standalone page** — `investgame.html` has no sidebar, no section-loader, no shared nav. Single `<main>` layout.
 2. **No shared module imports** — `invest-game/` modules are self-contained; they do not import from `shared/api.js` or any other dashboard module.
-3. **No Chart.js** — Pure HTML table + DOM manipulation only.
-4. **In-memory sessions** — `SESSION_DATA` dict lives in Python process memory. Sessions are lost on server restart. No DB persistence for game state.
-5. **Client-side winner** — Backend returns `"winner": "draw"`; actual winner determination happens via net value comparison in the browser.
-6. **Sequential day unlock** — Days reveal one at a time; `day_index` must match `len(day_log)` (409 error if out-of-sequence).
-7. **Day 9 auto-close** — Final day automatically sells if long, holds if flat, with a 700ms animation delay.
-8. **Volatile mode bypass** — Volatile scenarios use fully client-side mock data; no server calls even when `MOCK_MODE = false`.
+3. **Invest Game App uses shared modules** — `investgame-app/` imports from `shared/api.js`, `shared/charts.js`, `shared/utils.js`, `shared/i18n.js`, `shared/dev-auth.js`.
+4. **No Chart.js in game page** — Pure HTML table + DOM manipulation only in `investgame.html`.
+5. **In-memory sessions** — `SESSION_DATA` dict lives in Python process memory. Sessions are lost on server restart. No DB persistence for game state.
+6. **Client-side winner** — Backend returns `"winner": "draw"`; actual winner determination happens via net value comparison in the browser.
+7. **Sequential day unlock** — Days reveal one at a time; `day_index` must match `len(day_log)` (409 error if out-of-sequence).
+8. **Day 9 auto-close** — Final day automatically sells if long, holds if flat, with a 700ms animation delay.
+9. **Volatile mode bypass** — Volatile scenarios use fully client-side mock data; no server calls even when `MOCK_MODE = false`.
