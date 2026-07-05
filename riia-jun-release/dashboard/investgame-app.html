@@ -102,14 +102,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 
 /* ── Tabs ────────────────────────────────────────────────── */
 .tab-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;}
-.concept-tab-bar{display:flex;width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:22px;}
+.concept-tab-bar{display:flex;flex-wrap:wrap;width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:22px;}
 .concept-tab,.crisp-tab{font-family:var(--fm);font-size:10px;font-weight:500;padding:5px 10px;border-radius:4px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--t2);transition:all .12s;}
 .concept-tab:hover,.crisp-tab:hover{border-color:var(--build-bd);color:var(--build);}
 .concept-tab.active,.crisp-tab.active{background:var(--build);color:#fff;border-color:var(--build);}
-.concept-tab-bar .crisp-tab{flex:1;text-align:center;font-family:var(--fd);font-size:12px;font-weight:500;padding:9px 6px;border:none;border-right:1px solid var(--border);border-radius:0;cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;white-space:nowrap;}
-.concept-tab-bar .crisp-tab:last-child{border-right:none;}
-.concept-tab-bar .crisp-tab:hover{background:var(--surface2);color:var(--text);}
-.concept-tab-bar .crisp-tab.active{background:var(--build-bg);color:var(--build);font-weight:700;}
+.concept-tab-bar .concept-tab,.concept-tab-bar .crisp-tab{flex:1;min-width:120px;text-align:center;font-family:var(--fd);font-size:12px;font-weight:500;padding:9px 6px;border:none;border-right:1px solid var(--border);border-radius:0;cursor:pointer;background:transparent;color:var(--t2);transition:background .12s,color .12s;white-space:nowrap;}
+.concept-tab-bar .concept-tab:last-child,.concept-tab-bar .crisp-tab:last-child{border-right:none;}
+.concept-tab-bar .concept-tab:hover,.concept-tab-bar .crisp-tab:hover{background:var(--surface2);color:var(--text);}
+.concept-tab-bar .concept-tab.active,.concept-tab-bar .crisp-tab.active{background:var(--run-bg);color:var(--run);font-weight:700;}
 .concept-panel,.crisp-panel{display:block;}
 .concept-panel.hidden,.crisp-panel.hidden{display:none;}
 
@@ -125,6 +125,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .fact-pill{font-family:var(--fm);font-size:11px;padding:4px 12px;border-radius:100px;background:var(--build-bg);color:var(--build);border:1px solid var(--build-bd);white-space:nowrap;}
 .fact-pill.achieved{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
 .concept-chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+@media(max-width:760px){.concept-panel .concept-chart-grid{grid-template-columns:1fr;}}
+.chart-col-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t4);margin-bottom:6px;}
+.concept-panel .chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin-bottom:16px;}
+.concept-panel .chart-title{margin-bottom:14px;}
 
 /* ── Agent Performance Scorecards ────────────────────────── */
 .agp-sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
@@ -604,27 +608,27 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
-  <!-- Card 1: Investment Philosophies -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-philosophies').style.display=document.getElementById('cb-philosophies').style.display==='none'?'block':'none'">
-      <span class="card-title">Investment Philosophies</span>
-      <span style="color:var(--t3)">▼</span>
+  <!-- Cards 1–2: Investment Philosophies + Why Retail — side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-philosophies').style.display=document.getElementById('cb-philosophies').style.display==='none'?'block':'none'">
+        <span class="card-title">Investment Philosophies</span>
+        <span style="color:var(--t3)">▼</span>
+      </div>
+      <div id="cb-philosophies" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>Investing is not a single strategy but a spectrum of philosophies, each built on a different theory of where value comes from and how price and value eventually converge. Value investors, in the tradition of Benjamin Graham and Warren Buffett, seek assets trading below their intrinsic worth and hold patiently for the market to correct the mispricing. Growth investors are willing to pay premium valuations today in exchange for the compounding power of above-average earnings expansion tomorrow.</p>
+        <p style="margin-top:8px">Momentum investors take a different view entirely — they follow price itself, buying strength and selling weakness on the premise that trends persist longer than intuition suggests. Quantitative investing elevates any of these philosophies into a rules-based system, using data and models to generate signals free from emotional interference. What unifies the best practitioners across all schools is a shared commitment to risk-adjusted thinking: the goal is never maximum return in isolation, but the highest possible return per unit of risk accepted.</p>
+      </div>
     </div>
-    <div id="cb-philosophies" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
-      <p>Investing is not a single strategy but a spectrum of philosophies, each built on a different theory of where value comes from and how price and value eventually converge. Value investors, in the tradition of Benjamin Graham and Warren Buffett, seek assets trading below their intrinsic worth and hold patiently for the market to correct the mispricing. Growth investors are willing to pay premium valuations today in exchange for the compounding power of above-average earnings expansion tomorrow.</p>
-      <p style="margin-top:8px">Momentum investors take a different view entirely — they follow price itself, buying strength and selling weakness on the premise that trends persist longer than intuition suggests. Quantitative investing elevates any of these philosophies into a rules-based system, using data and models to generate signals free from emotional interference. What unifies the best practitioners across all schools is a shared commitment to risk-adjusted thinking: the goal is never maximum return in isolation, but the highest possible return per unit of risk accepted.</p>
-    </div>
-  </div>
-
-  <!-- Card 2: Why Retail Investors Lose Money -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-retail').style.display=document.getElementById('cb-retail').style.display==='none'?'block':'none'">
-      <span class="card-title">Why Retail Investors Lose Money</span>
-      <span style="color:var(--t3)">▼</span>
-    </div>
-    <div id="cb-retail" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
-      <p>Most retail investors do not lose because markets are unfair — they lose because human psychology is systematically mismatched with what markets demand. At emotional extremes, fear and greed take over: investors buy enthusiastically near peaks and sell in panic near troughs, locking in the exact pattern that destroys wealth over time. Overtrading compounds the problem, as each unnecessary transaction extracts a small cost in commissions, taxes, and slippage.</p>
-      <p style="margin-top:8px">Recency bias keeps retail investors perpetually a step behind: treating whatever happened recently as representative of what will happen next. Without a systematic edge, trades entered on headlines or emotion compete directly against institutional algorithms. Position sizing is rarely taught yet equally important — risking too large a fraction on any single trade means one bad outcome can erase months of discipline. And the most universal failure is simply having no exit plan.</p>
+    <div class="card">
+      <div class="card-hdr" style="cursor:pointer" onclick="document.getElementById('cb-retail').style.display=document.getElementById('cb-retail').style.display==='none'?'block':'none'">
+        <span class="card-title">Why Retail Investors Lose Money</span>
+        <span style="color:var(--t3)">▼</span>
+      </div>
+      <div id="cb-retail" class="card-body" style="font-size:13px;line-height:1.7;color:var(--t2)">
+        <p>Most retail investors do not lose because markets are unfair — they lose because human psychology is systematically mismatched with what markets demand. At emotional extremes, fear and greed take over: investors buy enthusiastically near peaks and sell in panic near troughs, locking in the exact pattern that destroys wealth over time. Overtrading compounds the problem, as each unnecessary transaction extracts a small cost in commissions, taxes, and slippage.</p>
+        <p style="margin-top:8px">Recency bias keeps retail investors perpetually a step behind: treating whatever happened recently as representative of what will happen next. Without a systematic edge, trades entered on headlines or emotion compete directly against institutional algorithms. Position sizing is rarely taught yet equally important — risking too large a fraction on any single trade means one bad outcome can erase months of discipline. And the most universal failure is simply having no exit plan.</p>
+      </div>
     </div>
   </div>
 
@@ -655,57 +659,92 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
-  <!-- Investment Workflow & Agents (8 tabs with charts) -->
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">Agents & Linked Analytics</span>
-      <span id="aw-status" style="font-size:11px;color:var(--t3)"></span>
-    </div>
+  <!-- Agent tabs — one per workflow step -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--t2)">Agents &amp; Linked Analytics</span>
+    <span id="aw-status" style="font-size:11px;color:var(--t3)"></span>
+  </div>
 
-    <div class="tab-bar">
-      <span class="concept-tab active" onclick="switchAgentTab('a1',this)">Financial Goal</span>
-      <span class="concept-tab" onclick="switchAgentTab('a2',this)">Research</span>
-      <span class="concept-tab" onclick="switchAgentTab('a3',this)">Sentiment</span>
-      <span class="concept-tab" onclick="switchAgentTab('a4',this)">Technical</span>
-      <span class="concept-tab" onclick="switchAgentTab('a5',this)">Strategy</span>
-      <span class="concept-tab" onclick="switchAgentTab('a6',this)">Scenario</span>
-      <span class="concept-tab" onclick="switchAgentTab('a7',this)">Execution</span>
-      <span class="concept-tab" onclick="switchAgentTab('a8',this)">Outcome</span>
-    </div>
+  <div class="concept-tab-bar">
+    <button class="concept-tab active" onclick="switchAgentTab('a1',this)">Initiation / Financial Goal</button>
+    <button class="concept-tab" onclick="switchAgentTab('a2',this)">Research Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a3',this)">Sentiment Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a4',this)">Technical Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a5',this)">Strategy Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a6',this)">Scenario Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a7',this)">Execution Analyst</button>
+    <button class="concept-tab" onclick="switchAgentTab('a8',this)">Outcome Analyst</button>
+  </div>
 
-    <!-- Panels -->
-    <div class="concept-panel" id="aw-a1">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Achieved Sharpe, Max DD, Win Rate and Return vs targets.</p>
-      <div class="chart-wrap"><canvas id="aw-a1-c1"></canvas></div>
+  <!-- a1 — Initiation / Financial Goal -->
+  <div id="aw-a1" class="concept-panel">
+    <p class="concept-desc">The <strong>Financial Goal</strong> step sets a clear, quantitative target (e.g. a Sharpe ratio, a return level, a drawdown ceiling) for the time period. RITA frames the learned strategy against these targets — the bars below compare achieved Sharpe, Max Drawdown, Win Rate and Return against representative goal levels.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Achieved vs Target KPIs</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Daily Return Distribution</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c2"></canvas></div></div>
     </div>
-    <div class="concept-panel hidden" id="aw-a2">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">ASML close price trend over 252 trading days.</p>
-      <div class="chart-wrap"><canvas id="aw-a2-c1"></canvas></div>
+  </div>
+
+  <!-- a2 — Research Analyst -->
+  <div id="aw-a2" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Research Analyst</strong> studies macro-economic trends, goods flow and demand / supply to arrive at growth projections. As a proxy, RITA tracks the underlying instrument's price trajectory — the long-horizon close-price trend the model learns from.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Close — Price Trend</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Trading Volume</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c2"></canvas></div></div>
     </div>
-    <div class="concept-panel hidden" id="aw-a3">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Market regime via trend score.</p>
-      <div class="chart-wrap"><canvas id="aw-a3-c1"></canvas></div>
+  </div>
+
+  <!-- a3 — Sentiment Analyst -->
+  <div id="aw-a3" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Sentiment Analyst</strong> reads present market conditions, public news and investor sentiment. RITA approximates market regime / sentiment with a composite trend score derived from the signal pipeline — rising scores indicate constructive regimes, falling scores indicate caution.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Market Regime — Trend Score</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Bollinger Band %B</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c2"></canvas></div></div>
     </div>
-    <div class="concept-panel hidden" id="aw-a4">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">RSI(14) with 60/30 bands + MACD line.</p>
-      <div class="chart-wrap"><canvas id="aw-a4-c1"></canvas></div>
-      <div class="chart-wrap"><canvas id="aw-a4-c2"></canvas></div>
+  </div>
+
+  <!-- a4 — Technical Analyst -->
+  <div id="aw-a4" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Technical Analyst</strong> applies technical indicators — candlestick patterns, charts, MACD, RSI and stochastic indicators. RITA computes these as model features; below are RSI(14) with overbought/oversold bands and the MACD line.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">RSI (14) with 60 / 30 bands</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">MACD (12 / 26)</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c2"></canvas></div></div>
     </div>
-    <div class="concept-panel hidden" id="aw-a5">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">EMA crossover signal analysis.</p>
-      <div class="chart-wrap"><canvas id="aw-a5-c1"></canvas></div>
+  </div>
+
+  <!-- a5 — Strategy Analyst -->
+  <div id="aw-a5" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Strategy Analyst</strong> decides the approach — Value Investing (buy cheap), Momentum Investing (trade strong upside / downside) or a Long-Term Horizon. RITA's momentum view is captured by the EMA stack; crossovers of fast over slow EMAs flag trend changes.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">EMA Crossover (5 / 13 / 26 / 50)</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">ATR% — Volatility</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c2"></canvas></div></div>
     </div>
-    <div class="concept-panel hidden" id="aw-a6">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">DDQN strategy vs Buy & Hold cumulative.</p>
-      <div class="chart-wrap"><canvas id="aw-a6-c1"></canvas></div>
+  </div>
+
+  <!-- a6 — Scenario Analyst -->
+  <div id="aw-a6" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Scenario Analyst</strong> evaluates portfolio performance through various scenarios over a short-term horizon. Expectations of maximum drawdown (MDD) can trigger a derivatives trade. The backtest below compares the DDQN strategy against a Buy &amp; Hold benchmark — divergence and drawdowns mark where hedging matters.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">DDQN Strategy vs Buy &amp; Hold</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Drawdown %</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c2"></canvas></div></div>
     </div>
-    <div class="concept-panel hidden" id="aw-a7">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Feature importance (SHAP |Overall|).</p>
-      <div class="chart-wrap"><canvas id="aw-a7-c1"></canvas></div>
+  </div>
+
+  <!-- a7 — Execution Analyst -->
+  <div id="aw-a7" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Execution Analyst</strong> takes the appropriate investment and balances it with the right derivatives trade. The SHAP feature-importance chart shows which signals most drive RITA's allocation decisions at execution time.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Feature Importance — SHAP |Overall|</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Allocation Timeline</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c2"></canvas></div></div>
     </div>
-    <div class="concept-panel hidden" id="aw-a8">
-      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Closed-loop backtest performance across training rounds.</p>
-      <div class="chart-wrap"><canvas id="aw-a8-c1"></canvas></div>
+  </div>
+
+  <!-- a8 — Outcome Analyst -->
+  <div id="aw-a8" class="concept-panel hidden">
+    <p class="concept-desc">The <strong>Outcome Analyst</strong> builds a closed-loop system: the result from each trade (profit / loss) is fed back to the initial phases to fine-tune the investment approach. The chart tracks backtest return and Sharpe across successive training rounds — the closed loop improving over time.</p>
+    <div class="concept-chart-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Backtest Return &amp; Sharpe by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Win Rate by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c2"></canvas></div></div>
     </div>
   </div>
 </section>

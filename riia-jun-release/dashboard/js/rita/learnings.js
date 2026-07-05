@@ -1,5 +1,4 @@
 // ── Learnings ───────────────────────────────────────────────
-import { t } from '../shared/i18n.js';
 import { api } from './api.js';
 import { mkChart, C } from './charts.js';
 
@@ -13,79 +12,6 @@ export function toggleLearnCard(id) {
 }
 
 export async function loadLearnings() {
-  // Cards 1–3: placeholder only — content added by user separately
-  // (no dynamic rendering needed; HTML is static in rita.html)
-
-  // Card 4: Market Trends — live charts
-  try {
-    const rows = await api('/api/v1/market-signals?timeframe=daily&periods=252&instrument=NIFTY');
-    if (!rows || !rows.length) {
-      const c4 = document.getElementById('learn-body-trends');
-      if (c4) c4.innerHTML = `<div class="empty">${t('learnings.no_data')}</div>`;
-      return;
-    }
-    const dates = rows.map(r => r.date);
-    const _xFmt = v => typeof v === 'string' ? v.slice(5) : v;
-
-    mkChart('chart-learn-price', {
-      type: 'line',
-      data: {
-        labels: dates,
-        datasets: [{
-          label: t('learnings.label_nifty_close'), data: rows.map(r => r.Close),
-          borderColor: C.run, backgroundColor: 'rgba(0,86,184,0.07)',
-          fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
-        scales: {
-          x: { grid: { display: false }, ticks: { maxTicksLimit: 12, callback: _xFmt, font: { size: 10 } } },
-          y: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 10 } } }
-        }
-      }
-    });
-
-    mkChart('chart-learn-rsi', {
-      type: 'line',
-      data: {
-        labels: dates,
-        datasets: [
-          {
-            label: 'RSI-14', data: rows.map(r => parseFloat(r.rsi_14)),
-            borderColor: C.warn, backgroundColor: 'transparent',
-            fill: false, tension: 0.2, pointRadius: 0, borderWidth: 2
-          },
-          {
-            label: t('learnings.label_overbought'), data: rows.map(() => 60),
-            borderColor: 'rgba(155,28,28,0.35)', borderDash: [4, 3],
-            fill: false, pointRadius: 0, borderWidth: 1
-          },
-          {
-            label: t('learnings.label_oversold'), data: rows.map(() => 30),
-            borderColor: 'rgba(0,128,0,0.35)', borderDash: [4, 3],
-            fill: false, pointRadius: 0, borderWidth: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
-        scales: {
-          x: { grid: { display: false }, ticks: { maxTicksLimit: 12, callback: _xFmt, font: { size: 10 } } },
-          y: { min: 0, max: 100, grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 10 } } }
-        }
-      }
-    });
-
-  } catch (e) {
-    console.warn('learnings chart error', e);
-  }
-
-  // ── Investment Workflow & Agents — tabbed agent block ──────
-  // Reuses existing endpoints only (no new path). One render error must
-  // never break the Concepts page, so the whole block is wrapped in try/catch.
   try {
     await loadAgentWorkflow();
   } catch (e) {
@@ -123,16 +49,36 @@ function _num(v) {
   return isNaN(n) ? null : n;
 }
 
+function _drawdown(values) {
+  let peak = -Infinity;
+  return values.map(v => {
+    if (v == null) return null;
+    if (v > peak) peak = v;
+    return peak > 0 ? ((v - peak) / peak) * 100 : 0;
+  });
+}
+
+function _histogram(vals, nBins) {
+  if (!vals.length) return { labels: [], counts: [] };
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const w = (mx - mn) / nBins || 1;
+  const counts = new Array(nBins).fill(0);
+  vals.forEach(v => { const i = Math.min(Math.floor((v - mn) / w), nBins - 1); counts[i]++; });
+  const labels = counts.map((_, i) => (mn + w * (i + 0.5)).toFixed(3));
+  return { labels, counts };
+}
+
 async function loadAgentWorkflow() {
   const statusEl = document.getElementById('aw-status');
   if (statusEl) statusEl.textContent = 'Loading…';
 
+  const inst = (localStorage.getItem('ritaInstrument') || 'ASML').toUpperCase();
   const [perfRes, sigRes, btdRes, shapRes, histRes] = await Promise.allSettled([
     api('/api/v1/performance-summary'),
-    api('/api/v1/market-signals?timeframe=daily&periods=252&instrument=NIFTY'),
-    api('/api/v1/experience/rita/backtest-daily?instrument=NIFTY'),
+    api(`/api/v1/market-signals?timeframe=daily&periods=252&instrument=${inst}`),
+    api(`/api/v1/experience/rita/backtest-daily?instrument=${inst}`),
     api('/api/v1/shap'),
-    api('/api/v1/experience/rita/training-history?instrument=NIFTY'),
+    api(`/api/v1/experience/rita/training-history?instrument=${inst}`),
   ]);
 
   const perf = perfRes.status === 'fulfilled' ? perfRes.value : null;
@@ -143,24 +89,24 @@ async function loadAgentWorkflow() {
 
   if (statusEl) statusEl.textContent = '';
 
-  renderGoal(perf);
+  renderGoal(perf, sig);
   renderResearch(sig);
   renderSentiment(sig);
   renderTechnical(sig);
   renderStrategy(sig);
   renderScenario(btd);
-  renderExecution(shap);
+  renderExecution(shap, btd);
   renderOutcome(hist);
 }
 
 // a1 — Initiation / Financial Goal: achieved Sharpe & Max DD vs targets
-function renderGoal(perf) {
+function renderGoal(perf, sig) {
   const p = perf?.performance || perf || {};
   const sharpe = _num(p.sharpe_ratio ?? p.sharpe) ?? 0;
   const mdd    = Math.abs(_num(p.max_drawdown_pct ?? p.max_drawdown) ?? 0);
   const ret    = _num(p.portfolio_total_return_pct ?? p.total_return_pct ?? p.total_return) ?? 0;
   const winRt  = _num(p.win_rate_pct ?? p.win_rate) ?? 0;
-  if (!perf) { _noData('aw-a1-c1'); return; }
+  if (!perf) { _noData('aw-a1-c1'); _noData('aw-a1-c2'); return; }
   mkChart('aw-a1-c1', {
     type: 'bar',
     data: {
@@ -172,26 +118,47 @@ function renderGoal(perf) {
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales() }
   });
+  if (!sig.length) { _noData('aw-a1-c2'); return; }
+  const closes = sig.map(r => _num(r.Close));
+  const rets = closes.slice(1).map((c, i) => (c != null && closes[i] != null && closes[i] !== 0) ? (c - closes[i]) / closes[i] : null).filter(v => v != null);
+  const bins = _histogram(rets, 20);
+  mkChart('aw-a1-c2', {
+    type: 'bar',
+    data: {
+      labels: bins.labels,
+      datasets: [{ label: 'Frequency', data: bins.counts, backgroundColor: 'rgba(0,86,184,.15)', borderColor: C.run, borderWidth: 1, borderRadius: 2 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales() }
+  });
 }
 
-// a2 — Research Analyst: instrument close price trend
+// a2 — Research Analyst: instrument close price trend + volume
 function renderResearch(sig) {
-  if (!sig.length) { _noData('aw-a2-c1'); return; }
+  if (!sig.length) { _noData('aw-a2-c1'); _noData('aw-a2-c2'); return; }
   const labels = sig.map(r => r.date);
   const close  = sig.map(r => _num(r.Close));
   mkChart('aw-a2-c1', {
     type: 'line',
     data: {
       labels,
-      datasets: [{ label: 'NIFTY Close', data: close, borderColor: C.run, backgroundColor: 'rgba(0,86,184,.07)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: false }]
+      datasets: [{ label: 'Close', data: close, borderColor: C.run, backgroundColor: 'rgba(0,86,184,.07)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: false }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
+  });
+  const vol = sig.map(r => _num(r.Volume));
+  mkChart('aw-a2-c2', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'Volume', data: vol, backgroundColor: 'rgba(107,47,160,.12)', borderColor: C.mon, borderWidth: 1, borderRadius: 1 }]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
   });
 }
 
-// a3 — Sentiment Analyst: market regime via trend_score
+// a3 — Sentiment Analyst: market regime via trend_score + Bollinger Band %B
 function renderSentiment(sig) {
-  if (!sig.length) { _noData('aw-a3-c1'); return; }
+  if (!sig.length) { _noData('aw-a3-c1'); _noData('aw-a3-c2'); return; }
   const labels = sig.map(r => r.date);
   const trend  = sig.map(r => _num(r.trend_score));
   mkChart('aw-a3-c1', {
@@ -199,6 +166,19 @@ function renderSentiment(sig) {
     data: {
       labels,
       datasets: [{ label: 'Trend / Regime Score', data: trend, borderColor: C.mon, backgroundColor: 'rgba(107,47,160,.08)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: false }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
+  });
+  const bbPctB = sig.map(r => _num(r.bb_pct_b));
+  mkChart('aw-a3-c2', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'BB %B', data: bbPctB, borderColor: C.warn, backgroundColor: 'rgba(181,120,33,.08)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: false },
+        { label: 'Overbought 1.0', data: sig.map(() => 1.0), borderColor: 'rgba(155,28,28,.30)', borderDash: [4, 3], fill: false, pointRadius: 0, borderWidth: 1 },
+        { label: 'Oversold 0.0', data: sig.map(() => 0.0), borderColor: 'rgba(0,128,0,.30)', borderDash: [4, 3], fill: false, pointRadius: 0, borderWidth: 1 },
+      ]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
   });
@@ -232,9 +212,9 @@ function renderTechnical(sig) {
   });
 }
 
-// a5 — Strategy Analyst: EMA crossover signal
+// a5 — Strategy Analyst: EMA crossover signal + ATR volatility
 function renderStrategy(sig) {
-  if (!sig.length) { _noData('aw-a5-c1'); return; }
+  if (!sig.length) { _noData('aw-a5-c1'); _noData('aw-a5-c2'); return; }
   const labels = sig.map(r => r.date);
   const close  = sig.map(r => _num(r.Close));
   const ema5   = sig.map(r => _num(r.ema_5));
@@ -255,12 +235,21 @@ function renderStrategy(sig) {
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
   });
+  const atr = sig.map(r => { const a = _num(r.atr_14); const c = _num(r.Close); return (a != null && c) ? (a / c) * 100 : null; });
+  mkChart('aw-a5-c2', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'ATR %', data: atr, borderColor: C.danger, backgroundColor: 'rgba(185,28,28,.06)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: false }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
+  });
 }
 
-// a6 — Scenario Analyst: DDQN strategy vs Buy & Hold cumulative (MDD trigger)
+// a6 — Scenario Analyst: DDQN strategy vs Buy & Hold + drawdown
 function renderScenario(btd) {
   const days = Array.isArray(btd) ? btd : (btd?.daily ?? []);
-  if (!days.length) { _noData('aw-a6-c1'); return; }
+  if (!days.length) { _noData('aw-a6-c1'); _noData('aw-a6-c2'); return; }
   const labels = days.map(d => d.date ?? d.Date ?? '');
   const ddqn   = days.map(d => _num(d.strategy_value ?? d.portfolio_value ?? d.cum_return_pct));
   const bh     = days.map(d => _num(d.bh_value ?? d.benchmark_value ?? d.bh_cum_return_pct));
@@ -275,35 +264,58 @@ function renderScenario(btd) {
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
   });
-}
-
-// a7 — Execution Analyst: feature importance (SHAP |Overall|)
-function renderExecution(shap) {
-  const rows = Array.isArray(shap) ? shap : (shap?.features ?? shap?.shap_values ?? []);
-  if (!rows.length) { _noData('aw-a7-c1'); return; }
-  const top = [...rows]
-    .sort((a, b) => Math.abs(_num(b.Overall ?? b.importance ?? b.mean_abs ?? b.value) ?? 0)
-                  - Math.abs(_num(a.Overall ?? a.importance ?? a.mean_abs ?? a.value) ?? 0))
-    .slice(0, 8);
-  const fLabels = top.map(r => r.feature ?? r.name ?? String(r));
-  const fVals   = top.map(r => Math.abs(_num(r.Overall ?? r.importance ?? r.mean_abs ?? r.value) ?? 0));
-  mkChart('aw-a7-c1', {
-    type: 'bar',
+  const dd = _drawdown(ddqn);
+  mkChart('aw-a6-c2', {
+    type: 'line',
     data: {
-      labels: fLabels,
-      datasets: [{ label: 'SHAP |Overall|', data: fVals, backgroundColor: 'rgba(0,86,184,.12)', borderColor: C.run, borderWidth: 1.5, borderRadius: 3 }]
+      labels,
+      datasets: [{ label: 'Drawdown %', data: dd, borderColor: C.danger, backgroundColor: 'rgba(185,28,28,.08)', fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2, spanGaps: false }]
     },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG },
-      scales: { x: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 10 } } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } }
-    }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
   });
 }
 
-// a8 — Outcome Analyst: closed-loop backtest Sharpe/return across rounds
+// a7 — Execution Analyst: feature importance (SHAP) + allocation timeline
+function renderExecution(shap, btd) {
+  const rows = Array.isArray(shap) ? shap : (shap?.features ?? shap?.shap_values ?? []);
+  if (!rows.length) { _noData('aw-a7-c1'); } else {
+    const top = [...rows]
+      .sort((a, b) => Math.abs(_num(b.Overall ?? b.importance ?? b.mean_abs ?? b.value) ?? 0)
+                    - Math.abs(_num(a.Overall ?? a.importance ?? a.mean_abs ?? a.value) ?? 0))
+      .slice(0, 8);
+    const fLabels = top.map(r => r.feature ?? r.name ?? String(r));
+    const fVals   = top.map(r => Math.abs(_num(r.Overall ?? r.importance ?? r.mean_abs ?? r.value) ?? 0));
+    mkChart('aw-a7-c1', {
+      type: 'bar',
+      data: {
+        labels: fLabels,
+        datasets: [{ label: 'SHAP |Overall|', data: fVals, backgroundColor: 'rgba(0,86,184,.12)', borderColor: C.run, borderWidth: 1.5, borderRadius: 3 }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG },
+        scales: { x: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 10 } } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } }
+      }
+    });
+  }
+  const days = Array.isArray(btd) ? btd : (btd?.daily ?? []);
+  if (!days.length) { _noData('aw-a7-c2'); return; }
+  const labels = days.map(d => d.date ?? d.Date ?? '');
+  const rawAlloc = days.map(d => _num(d.allocation ?? d.position ?? d.action));
+  const alloc  = rawAlloc.map(v => v != null ? v * 100 : null);
+  mkChart('aw-a7-c2', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'Allocation %', data: alloc, borderColor: C.build, backgroundColor: 'rgba(26,107,60,.08)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1.5, spanGaps: false }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales({ ticks: { maxTicksLimit: 12, callback: _xFmtShort, font: { size: 10 } } }) }
+  });
+}
+
+// a8 — Outcome Analyst: closed-loop backtest Sharpe/return + win rate across rounds
 function renderOutcome(hist) {
-  if (!hist.length) { _noData('aw-a8-c1'); return; }
+  if (!hist.length) { _noData('aw-a8-c1'); _noData('aw-a8-c2'); return; }
   const labels = hist.map((r, i) => `R${r.round ?? i + 1}`);
   const ret    = hist.map(r => _num(r.backtest_return_pct));
   const sharpe = hist.map(r => _num(r.backtest_sharpe));
@@ -324,6 +336,15 @@ function renderOutcome(hist) {
         y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { size: 10 } }, title: { display: true, text: 'Sharpe' } },
       }
     }
+  });
+  const winRt = hist.map(r => _num(r.win_rate_pct ?? r.win_rate));
+  mkChart('aw-a8-c2', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'Win Rate %', data: winRt, backgroundColor: 'rgba(26,107,60,.15)', borderColor: C.build, borderWidth: 1.5, borderRadius: 3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: _LEG }, scales: _scales() }
   });
 }
 

@@ -183,6 +183,7 @@ canvas,.chart-canvas{display:block;}
 .concept-desc{font-size:12.5px;color:var(--t2);line-height:1.78;margin-bottom:16px;}
 .concept-chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
 @media(max-width:760px){.concept-chart-grid{grid-template-columns:1fr;}}
+.chart-col-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);margin-bottom:6px;}
 
 /* Table */
 .tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow-x:hidden;overflow-y:auto;max-height:260px;box-shadow:var(--sh);margin-bottom:16px;}
@@ -1206,18 +1207,6 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
-  <!-- Card 6: Market Trends (live charts) -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('trends')">
-      <span class="card-title">Market Trends</span>
-      <span id="learn-chevron-trends">▼</span>
-    </div>
-    <div id="learn-body-trends" class="card-body">
-      <div style="height:220px;margin-bottom:16px"><canvas id="chart-learn-price"></canvas></div>
-      <div style="height:160px"><canvas id="chart-learn-rsi"></canvas></div>
-    </div>
-  </div>
-
   <!-- ════════ Investment Workflow & Agents ════════ -->
   <div class="card" style="margin-bottom:12px">
     <div class="card-body">
@@ -1293,7 +1282,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a1" class="concept-panel">
     <p class="concept-desc">The <strong>Financial Goal</strong> step sets a clear, quantitative target (e.g. a Sharpe ratio, a return level, a drawdown ceiling) for the time period. RITA frames the learned strategy against these targets — the bars below compare achieved Sharpe, Max Drawdown, Win Rate and Return against representative goal levels.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">Achieved vs Target KPIs</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Achieved vs Target KPIs</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Daily Return Distribution</div><div class="chart-box" style="height:240px"><canvas id="aw-a1-c2"></canvas></div></div>
     </div>
   </div>
 
@@ -1301,7 +1291,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a2" class="concept-panel hidden">
     <p class="concept-desc">The <strong>Research Analyst</strong> studies macro-economic trends, goods flow and demand / supply to arrive at growth projections. As a proxy, RITA tracks the underlying instrument's price trajectory — the long-horizon close-price trend the model learns from.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">NIFTY Close — Price Trend</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Close — Price Trend</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Trading Volume</div><div class="chart-box" style="height:240px"><canvas id="aw-a2-c2"></canvas></div></div>
     </div>
   </div>
 
@@ -1309,7 +1300,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a3" class="concept-panel hidden">
     <p class="concept-desc">The <strong>Sentiment Analyst</strong> reads present market conditions, public news and investor sentiment. RITA approximates market regime / sentiment with a composite trend score derived from the signal pipeline — rising scores indicate constructive regimes, falling scores indicate caution.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">Market Regime — Trend Score</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Market Regime — Trend Score</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Bollinger Band %B</div><div class="chart-box" style="height:240px"><canvas id="aw-a3-c2"></canvas></div></div>
     </div>
   </div>
 
@@ -1317,8 +1309,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a4" class="concept-panel hidden">
     <p class="concept-desc">The <strong>Technical Analyst</strong> applies technical indicators — candlestick patterns, charts, MACD, RSI and stochastic indicators. RITA computes these as model features; below are RSI(14) with overbought/oversold bands and the MACD line.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">RSI (14) with 60 / 30 bands</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c1"></canvas></div></div>
-      <div class="chart-wrap"><div class="chart-title">MACD (12 / 26)</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c2"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">RSI (14) with 60 / 30 bands</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">MACD (12 / 26)</div><div class="chart-box" style="height:240px"><canvas id="aw-a4-c2"></canvas></div></div>
     </div>
   </div>
 
@@ -1326,7 +1318,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a5" class="concept-panel hidden">
     <p class="concept-desc">The <strong>Strategy Analyst</strong> decides the approach — Value Investing (buy cheap), Momentum Investing (trade strong upside / downside) or a Long-Term Horizon. RITA's momentum view is captured by the EMA stack; crossovers of fast over slow EMAs flag trend changes.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">EMA Crossover (5 / 13 / 26 / 50)</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">EMA Crossover (5 / 13 / 26 / 50)</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">ATR% — Volatility</div><div class="chart-box" style="height:240px"><canvas id="aw-a5-c2"></canvas></div></div>
     </div>
   </div>
 
@@ -1334,7 +1327,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a6" class="concept-panel hidden">
     <p class="concept-desc">The <strong>Scenario Analyst</strong> evaluates portfolio performance through various scenarios over a short-term horizon. Expectations of maximum drawdown (MDD) can trigger a derivatives trade. The backtest below compares the DDQN strategy against a Buy &amp; Hold benchmark — divergence and drawdowns mark where hedging matters.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">DDQN Strategy vs Buy &amp; Hold</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">DDQN Strategy vs Buy &amp; Hold</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Drawdown %</div><div class="chart-box" style="height:240px"><canvas id="aw-a6-c2"></canvas></div></div>
     </div>
   </div>
 
@@ -1342,7 +1336,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a7" class="concept-panel hidden">
     <p class="concept-desc">The <strong>Execution Analyst</strong> takes the appropriate investment and balances it with the right derivatives trade. The SHAP feature-importance chart shows which signals most drive RITA's allocation decisions at execution time.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">Feature Importance — SHAP |Overall|</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Feature Importance — SHAP |Overall|</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Allocation Timeline</div><div class="chart-box" style="height:240px"><canvas id="aw-a7-c2"></canvas></div></div>
     </div>
   </div>
 
@@ -1350,7 +1345,8 @@ tr:hover td{background:var(--surface2);}
   <div id="aw-a8" class="concept-panel hidden">
     <p class="concept-desc">The <strong>Outcome Analyst</strong> builds a closed-loop system: the result from each trade (profit / loss) is fed back to the initial phases to fine-tune the investment approach. The chart tracks backtest return and Sharpe across successive training rounds — the closed loop improving over time.</p>
     <div class="concept-chart-grid">
-      <div class="chart-wrap"><div class="chart-title">Closed-Loop — Backtest Return &amp; Sharpe by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Agent</div><div class="chart-title">Backtest Return &amp; Sharpe by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c1"></canvas></div></div>
+      <div class="chart-wrap"><div class="chart-col-label">Linked Analytics</div><div class="chart-title">Win Rate by Round</div><div class="chart-box" style="height:240px"><canvas id="aw-a8-c2"></canvas></div></div>
     </div>
   </div>
 
