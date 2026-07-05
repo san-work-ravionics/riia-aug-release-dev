@@ -412,7 +412,9 @@ def train_best_of_n_v2(
 
 def load_agent_v2(model_path: str) -> DQN:
     """Load a saved V2 DDQN model from disk (advisory use only in Phase 3)."""
-    return DQN.load(model_path)
+    from rita.core.model_compat import load_dqn_compat
+
+    return load_dqn_compat(model_path)
 
 
 def run_episode_v2(model: DQN, df: pd.DataFrame, risk_tolerance: str = "medium") -> dict:

@@ -815,7 +815,7 @@ def dispatch(
             model = load_agent_v2(candidates[-1])
             rec = recommend_hedge(df, model, risk_tolerance="medium")
         except Exception as exc:  # noqa: BLE001 — advisory must never hard-fail the chat
-            log.warning("execution_hedge.failed", error=str(exc))
+            _perf_log.warning("execution_hedge.failed", error=str(exc))
             return "The RL hedge advisor is temporarily unavailable. No action taken."
 
         breach_note = (
