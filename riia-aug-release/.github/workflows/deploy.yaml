@@ -1,0 +1,301 @@
+name: Build and Deploy to EC2
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      RITA_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with dev deps
+        run: pip install -e ".[dev]"
+
+      - name: Run database migrations
+        run: alembic upgrade head
+
+      - name: Run unit tests
+        run: >
+          pytest tests/unit/
+          --junitxml=test-results/unit/latest.xml
+          --tb=short -q
+          --cov=rita --cov-report=term-missing --cov-fail-under=55
+
+      - name: Run integration tests
+        run: >
+          pytest tests/integration/
+          --junitxml=test-results/integration/latest.xml
+          --tb=short -q
+
+      - name: Run e2e smoke tests
+        continue-on-error: true
+        run: pytest tests/e2e/test_smoke.py --tb=short -q
+
+      - name: Run e2e RITA scenarios
+        continue-on-error: true
+        run: >
+          pytest tests/e2e/test_rita_scenarios.py
+          --junitxml=test-results/e2e/rita/latest.xml
+          --tb=short -q
+
+      - name: Run e2e FnO scenarios
+        continue-on-error: true
+        run: >
+          pytest tests/e2e/test_fno_scenarios.py
+          --junitxml=test-results/e2e/fno/latest.xml
+          --tb=short -q
+
+      - name: Run e2e Ops scenarios
+        continue-on-error: true
+        run: >
+          pytest tests/e2e/test_ops_scenarios.py
+          --junitxml=test-results/e2e/ops/latest.xml
+          --tb=short -q
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache \
+            /usr/local/share/boost \
+            /usr/local/share/powershell \
+            /usr/local/.ghcup \
+            /usr/share/swift \
+            /usr/lib/jvm \
+            "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get clean
+          sudo swapoff -a
+          df -h
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set image reference
+        id: meta
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}/rita:${{ github.sha }}"
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}
+            ghcr.io/${{ github.repository }}/rita:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ${{ needs.build-and-push.outputs.image }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Sync instrument data to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "sudo mkdir -p /opt/rita_input/raw /opt/rita_input/input /opt/rita_input/agent-ops/runs /opt/rita_output && sudo chown -R ubuntu:ubuntu /opt/rita_input /opt/rita_output"
+          rsync -av --update \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            data/raw/ \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/raw/
+          rsync -av --update \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            data/input/ \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/input/
+          rsync -av --update \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            data/agent-ops/ \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_input/agent-ops/
+
+      # Split into short SSH calls so no single session is killed by OOM.
+      # Stop + prune BEFORE pull so old image layers are freed first.
+
+      - name: Backup models from EC2
+        run: |
+          mkdir -p /tmp/rita_models_backup
+          rsync -av --ignore-missing-args \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_output/models/ \
+            /tmp/rita_models_backup/ || echo "No models to backup (first deploy or empty)"
+
+      - name: Free EC2 disk space
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "docker stop rita 2>/dev/null || true \
+             && docker rm rita 2>/dev/null || true \
+             && docker image prune -af \
+             && df -h"
+
+      - name: Pull image on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u san-work-ravionics --password-stdin \
+             && docker pull '${{ env.IMAGE }}'"
+
+      - name: Swap container on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "docker run -d \
+              --name rita \
+              --restart unless-stopped \
+              -p 127.0.0.1:8000:8000 \
+              -e RITA_ENV=production \
+              -e RITA_JWT_SECRET='${{ secrets.RITA_JWT_SECRET }}' \
+              -e RITA_GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
+              -e RITA_GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
+              -e RITA_BASE_URL='${{ secrets.RITA_BASE_URL }}' \
+              -v /opt/rita_input:/app/data \
+              -v /opt/rita_output:/app/rita_output \
+              --memory 900m \
+              --log-driver awslogs \
+              --log-opt awslogs-region=ap-south-1 \
+              --log-opt awslogs-group=/rita/app \
+              --log-opt awslogs-stream=rita-container \
+              '${{ env.IMAGE }}'"
+
+      - name: Health check
+        run: |
+          echo "Waiting for /health..."
+          for i in $(seq 1 30); do
+            if curl -sf http://${{ secrets.AWS_EC2_IP }}/health > /dev/null; then
+              echo "RITA is up."
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "Health check timed out."
+          exit 1
+
+      - name: Restore models to EC2
+        run: |
+          if [ -n "$(ls -A /tmp/rita_models_backup 2>/dev/null)" ]; then
+            ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+              "mkdir -p /opt/rita_output/models"
+            rsync -av \
+              -e "ssh -o StrictHostKeyChecking=no" \
+              /tmp/rita_models_backup/ \
+              ubuntu@${{ secrets.AWS_EC2_IP }}:/opt/rita_output/models/
+            echo "Models restored."
+          else
+            echo "No models to restore."
+          fi
+
+      - name: Seed agent builds DB
+        run: |
+          cat > /tmp/rita_seed_agent_builds.py << 'PYEOF'
+          import json, sqlite3
+          from pathlib import Path
+          from datetime import datetime
+
+          RUNS_DIR = Path("/opt/rita_input/agent-ops/runs")
+          DB_PATH  = Path("/opt/rita_output/rita.db")
+
+          if not RUNS_DIR.exists():
+              print(f"SKIP: {RUNS_DIR} not found")
+              raise SystemExit(0)
+
+          con = sqlite3.connect(DB_PATH)
+          cur = con.cursor()
+          now = datetime.utcnow().isoformat()
+          existing = {row[0] for row in cur.execute("SELECT run_id FROM agent_build_runs")}
+          run_files = sorted(RUNS_DIR.glob("run-*.json"))
+          print(f"Found {len(run_files)} run files, {len(existing)} already in DB")
+
+          inserted_runs = 0
+          inserted_agents = 0
+          for path in run_files:
+              data = json.loads(path.read_text())
+              run_id = data.get("run_id")
+              if not run_id or run_id in existing:
+                  continue
+              cur.execute(
+                  "INSERT OR IGNORE INTO agent_build_runs "
+                  "(run_id,app,request,skill_file,overall_status,total_tokens_estimated,"
+                  "duration_minutes,branch,merge_status,merge_commit,recorded_at) "
+                  "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                  (run_id, data.get("app",""), data.get("request"), data.get("skill_file"),
+                   data.get("overall_status","unknown"), data.get("total_tokens_estimated"),
+                   data.get("duration_minutes"), data.get("branch"),
+                   data.get("merge_status"), data.get("merge_commit"), now))
+              inserted_runs += 1
+              for agent in data.get("agents", []):
+                  role = agent.get("role","unknown")
+                  raw = agent.get("actual_tokens")
+                  actual = raw.get("total_tokens") if isinstance(raw, dict) else (raw if isinstance(raw, int) else None)
+                  cur.execute(
+                      "INSERT OR IGNORE INTO agent_build_agents "
+                      "(agent_id,run_id,role,status,steps_required,steps_completed,"
+                      "adherence_score,token_estimate,grounding_checks,failure_modes,"
+                      "recorded_at,actual_tokens_total) "
+                      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                      (f"{run_id}-{role}", run_id, role, agent.get("status","unknown"),
+                       agent.get("steps_required"), agent.get("steps_completed"),
+                       agent.get("adherence_score"), agent.get("token_estimate"),
+                       json.dumps(agent.get("grounding_checks")),
+                       json.dumps(agent.get("failure_modes",[])), now, actual))
+                  inserted_agents += 1
+
+          con.commit()
+          con.close()
+          print(f"Seeded {inserted_runs} runs, {inserted_agents} agent rows")
+          PYEOF
+          scp -o StrictHostKeyChecking=no /tmp/rita_seed_agent_builds.py \
+            ubuntu@${{ secrets.AWS_EC2_IP }}:/tmp/rita_seed_agent_builds.py
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} \
+            "python3 /tmp/rita_seed_agent_builds.py"
