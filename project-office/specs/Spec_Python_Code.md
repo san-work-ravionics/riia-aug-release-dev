@@ -341,6 +341,29 @@ def train_best_of_n(env, n_seeds: int = 3) -> DoubleDQN:
     """Train n models with different seeds, return the one with best backtest Sharpe."""
 ```
 
+`load_agent()` / `load_agent_v2()` route through `model_compat.load_dqn_compat` (2026-07-05) — never call `DQN.load` directly on model zips.
+
+### `model_compat.py` (2026-07-05)
+
+Cross-version DQN model loading. Model zips are trained on the Windows machine
+(numpy 2.4 / SB3 2.7 / gymnasium 1.2 — recorded in each zip's `system_info.txt`),
+while the Intel Mac serving venv is capped at torch 2.2.2 → numpy 1.26 / SB3 2.4 /
+gymnasium 1.0.
+
+```python
+def ensure_numpy2_pickle_compat() -> None:
+    """Idempotent shims: aliases numpy._core.* submodules missing from numpy 1.26's
+    stub; patches numpy.random._pickle.__bit_generator_ctor to accept the
+    BitGenerator class (numpy 2 pickles pass the class, numpy 1 expects the name)."""
+
+def load_dqn_compat(model_path: str) -> DQN:
+    """Plain DQN.load first (no-op fast path when versions match, e.g. production —
+    see constraints-prod.txt). On failure, retries with SB3 custom_objects:
+    rebuilds obs/action spaces from the saved q-net weight shapes (obs dim =
+    first-layer input, action dim = last-layer output) and substitutes constant
+    schedules, which inference never consults."""
+```
+
 ### `trading_env_v2.py` (Feature 32 — Phase 3+3.5)
 
 ```python

@@ -12,6 +12,16 @@ Fully local — no Claude/Anthropic API calls at runtime.
 - Cosine similarity between user query and seed embeddings → best-matching intent
 - Confidence threshold: **0.42** (below = low-confidence fallback response)
 - Model is lazy-loaded once, then cached in memory (`_model` global)
+- **Embed model path resolution (2026-07-05):** `chat.embed_model_path` default in
+  `base.yaml` is the Windows HF-cache path. Per-machine override via the
+  `RITA_CHAT_EMBED_MODEL_PATH` env var (handled in `config.py` alongside
+  `RITA_MODEL_PATH`); on the Mac it's exported in `activate-env-mac.sh` pointing
+  at the local HF cache snapshot. Production uses `production.yaml`
+  (`/app/models/embed_model`, baked into the Docker image).
+- **Intel Mac constraint:** torch is capped at 2.2.2 (last x86_64 macOS wheel), so
+  the local venv must keep transformers ≤4.x / sentence-transformers ≤3.x —
+  transformers 5.x requires torch ≥2.4 and crashes chat warmup on import.
+  Production pins the modern stack via `constraints-prod.txt`.
 
 ### 2. Data Calculations (`dispatch()` in `classifier.py`)
 - Once classified, a deterministic handler runs against live OHLCV data
