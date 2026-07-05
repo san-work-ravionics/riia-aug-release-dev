@@ -128,7 +128,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
   </a>
   <div class="topbar-center">Risk Informed Investment Approach</div>
   <div class="topbar-right">
-    <a id="nav-onboarding" href="#" class="t-nav-link">Onboarding</a>
     <div class="status-pill">
       <span class="status-dot"></span>
       <span>System ready</span>
@@ -298,9 +297,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 
   // Intercept clicks on Google Auth Protected modules
   document.addEventListener("DOMContentLoaded", function() {
-    const navOnboarding = document.getElementById('nav-onboarding');
-    if (navOnboarding) navOnboarding.href = window.location.origin + '/onboarding';
-
     const protectedTiles = document.querySelectorAll('.protected-route');
     const enforcerToggle = document.getElementById('auth-enforcer-toggle');
 

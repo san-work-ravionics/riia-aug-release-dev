@@ -185,7 +185,7 @@ Two UIs exist for the same backend. Both use `MOCK_MODE` flag to bypass the real
 
 | File | Path | Description | Status |
 |---|---|---|---|
-| `investgame-app.html` | `dashboard/investgame-app.html` | **Standalone app** — 6-page sidebar: Play Game (intro + link to investgame.html), Concepts (8-tab agent workflow), CRISP-DM, Agent Performance, Agent Builds, Agent Panel. Same :root CSS as RITA. No auth required — open access. | Added 2026-07-04 |
+| `investgame-app.html` | `dashboard/investgame-app.html` | **Standalone app** — 7-page sidebar: Play Game (intro + link to investgame.html), Journey (iframe of `/journey` — investor journey flow, formerly "Onboarding"), Concepts (8-tab agent workflow), CRISP-DM, Agent Performance, Agent Builds, Agent Panel. Same :root CSS as RITA. No auth required — open access. | Added 2026-07-04; Journey added 2026-07-05 |
 
 **JS modules:** `dashboard/js/investgame-app/` — see Spec_JS_Code.md Section 5b.
 **Index tile:** Listed as the first tile in the Open Access zone on `index.html`.

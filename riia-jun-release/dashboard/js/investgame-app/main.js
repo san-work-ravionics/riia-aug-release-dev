@@ -2,13 +2,17 @@
 import { show, registerLoader, toggleSidebar } from './nav.js';
 import { loadConcepts, switchAgentTab } from './concepts.js';
 import { loadCrispDm, switchCrispTab } from './crisp-dm.js';
-import { loadAgentPerformance } from './agent-performance.js';
-import { loadAgentBuilds } from './agent-builds.js';
+import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline } from './agent-performance.js';
+import { loadAgentBuilds, submitTokenEstimate, toggleEstimateWidget, closeChartModal } from './agent-builds.js';
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal } from './agent-panel.js';
 import { ensureDevToken } from '../shared/dev-auth.js';
 
 // ── Register section loaders ─────────────────────────────────────────────────
 registerLoader('investgame', () => {}); // intro page — no data to load
+registerLoader('journey', () => {
+  const frame = document.getElementById('journey-frame');
+  if (frame && !frame.src) frame.src = frame.dataset.src;
+});
 registerLoader('concepts', loadConcepts);
 registerLoader('crisp-dm', loadCrispDm);
 registerLoader('agent-performance', loadAgentPerformance);
@@ -23,7 +27,12 @@ window.switchCrispTab = switchCrispTab;
 window.loadConcepts = loadConcepts;
 window.loadCrispDm = loadCrispDm;
 window.loadAgentPerformance = loadAgentPerformance;
+window.setAgentPerfPeriod = setAgentPerfPeriod;
+window.loadAgentPerfTimeline = loadAgentPerfTimeline;
 window.loadAgentBuilds = loadAgentBuilds;
+window.submitTokenEstimate = submitTokenEstimate;
+window.toggleEstimateWidget = toggleEstimateWidget;
+window.closeChartModal = closeChartModal;
 window.loadAgentPanel = loadAgentPanel;
 window.agentPanelStep = agentPanelStep;
 window.resetAgentPanel = resetAgentPanel;

@@ -33,6 +33,7 @@ html{scroll-behavior:smooth}
   --warn:#92480A;--warn-bg:#FEF4EB;--warn-bd:#F5C99A;
   --danger:#9B1C1C;--danger-bg:#FEF2F2;--danger-bd:#FCA5A5;
   --game:#B45309;--game-bg:#FEF3C7;--game-bd:#FCD34D;--game-light:#FFFBEB;--info:#0056B8;
+  --accelerate:#6B2FA0;--accelerate-bg:#F5EFFE;--accelerate-bd:#CFADF0;
   --pos:#1A6B3C;--neg:#9B1C1C;--neg-bg:#FEF2F2;--neg-bd:#FCA5A5;
   --fd:'Epilogue',sans-serif;--fm:'IBM Plex Mono',monospace;--fs:'Instrument Serif',serif;
   --r:6px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
@@ -135,35 +136,75 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .agp-bar-wrap{width:48px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;display:inline-block;}
 .agp-bar{height:100%;background:var(--build);border-radius:3px;transition:width .3s;}
 
+/* ── RITA look parity (scoped via .rita-parity on sections ported from rita.html) ── */
+.hdr-actions{display:flex;gap:8px;flex-shrink:0;}
+.h220{height:220px;}
+.rita-parity .kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.rita-parity .kpi-row-4 .card{margin-bottom:0;padding:16px 18px;}
+.rita-parity .kpi-label{font-family:var(--fm);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:4px;}
+.rita-parity .kpi-value{font-family:var(--fm);font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1.1;}
+.rita-parity .kpi-value.neu{color:var(--run);}
+.rita-parity .card-hdr{margin-bottom:14px;}
+.rita-parity .card-title{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--text);margin-bottom:0;}
+.rita-parity .card-sub{font-size:11px;color:var(--t3);}
+.rita-parity .agp-sc-grid{grid-template-columns:repeat(4,1fr);}
+.rita-parity .agp-sc{border-width:1.5px;}
+.rita-parity .agp-sc-role{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--build);margin-bottom:9px;gap:6px;}
+.rita-parity .chart-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin:0 0 16px;}
+.rita-parity .chart-title{margin-bottom:14px;}
+.rita-parity .tbl-wrap{margin-top:0;overflow-y:auto;}
+.rita-parity .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;}
+.rita-parity .form-group{display:flex;flex-direction:column;gap:5px;}
+.rita-parity .form-label{font-size:11px;font-weight:600;color:var(--t2);}
+.rita-parity .form-input{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;font-family:var(--fd);font-size:13px;color:var(--text);outline:none;transition:border-color .12s;}
+.rita-parity .form-input:focus{border-color:var(--run);}
+.rita-parity .btn-build{background:var(--build);color:#fff;border-color:var(--build);}
+.rita-parity .btn-build:hover{opacity:.88;}
+.rita-parity .btn-sm{padding:4px 10px;font-size:11px;}
+.rita-parity .badge{text-transform:uppercase;letter-spacing:.04em;border-radius:3px;padding:2px 7px;display:inline-flex;align-items:center;}
+@media(max-width:1100px){
+  .rita-parity .agp-sc-grid{grid-template-columns:repeat(2,1fr);}
+  .rita-parity .kpi-row-4{grid-template-columns:repeat(2,1fr);}
+}
+
 /* ── Agent Builds ────────────────────────────────────────── */
-.ab-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:14px;}
-.ab-sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
-.ab-sc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;}
-.ab-sc-role{font-size:11px;font-weight:600;margin-bottom:6px;color:var(--run);}
-.ab-sc-row{display:flex;align-items:center;justify-content:space-between;font-size:10px;margin-bottom:3px;}
+/* Agent Builds — mirrors ops.html */
+.ab-grid{display:flex;flex-direction:column;gap:16px;}
+.ab-row{display:grid;gap:16px;align-items:start;}
+.ab-row-2{grid-template-columns:1fr 1fr;}
+.ab-row-3{grid-template-columns:1fr 1fr 1fr;}
+.ab-row-2-75{grid-template-columns:3fr 1fr;}
+.ab-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh);min-width:0;overflow:hidden;}
+.ab-sc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0 10px;margin-top:4px;}
+.ab-hm-grid{display:grid;grid-template-columns:150px repeat(5,1fr);gap:0;margin-top:4px;}
+.ab-sc{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;}
+.ab-sc-role{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--accelerate);text-transform:capitalize;margin-bottom:8px;}
+.ab-sc-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:5px;gap:8px;}
 .ab-sc-lbl{color:var(--t3);}
-.ab-sc-val{font-family:var(--fm);font-size:10px;display:flex;align-items:center;gap:3px;}
-.ab-bar-wrap{width:40px;height:4px;background:var(--border);border-radius:3px;overflow:hidden;display:inline-block;}
-.ab-bar{height:100%;background:var(--run);border-radius:3px;}
-.c-ey{display:flex;align-items:center;gap:8px;font-family:var(--fm);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t2);margin-bottom:12px;}
-.ey-d{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ab-sc-val{font-weight:600;color:var(--t2);font-family:var(--fm);white-space:nowrap;}
+.ab-bar-wrap{background:var(--border);border-radius:3px;height:5px;overflow:hidden;width:52px;display:inline-block;vertical-align:middle;}
+.ab-bar{background:var(--accelerate);height:100%;border-radius:3px;transition:width .4s;}
+.ab-heatmap th{text-align:center;}
+.ab-heatmap td{text-align:center;min-width:58px;font-family:var(--fm);font-size:11px;}
+.ab-chart-wrap{position:relative;height:180px;margin-top:4px;}
+.heat-0{background:var(--surface);color:var(--t4);}
+.heat-1{background:var(--warn-bg);color:var(--warn);font-weight:600;}
+.heat-2{background:var(--danger-bg);color:var(--danger);font-weight:600;}
+.heat-3{background:rgba(155,28,28,.22);color:var(--danger);font-weight:700;}
+.badge.danger{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-bd);}
+.c-ey{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--t4);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.ey-d{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 
 /* ── Tables ──────────────────────────────────────────────── */
-.tbl-wrap{overflow-x:auto;margin-top:8px;}
-table{width:100%;border-collapse:collapse;font-size:11px;}
-th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);text-align:left;padding:6px 8px;border-bottom:1.5px solid var(--border);}
-td{padding:6px 8px;border-bottom:1px solid var(--border);color:var(--t2);}
+/* Table — mirrors rita.html: highlighted sticky heading + scroll box (~6 rows) */
+.tbl-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow-x:auto;overflow-y:auto;max-height:260px;box-shadow:var(--sh);margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{position:sticky;top:0;z-index:1;background:var(--surface2);font-family:var(--fm);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);}
+td{padding:8px 14px;border-bottom:1px solid var(--border);color:var(--t2);}
 tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
 
 /* ── Agent Panel ─────────────────────────────────────────── */
-.ap-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
-.ap-widget{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;}
-.ap-widget-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:4px;}
-.ap-widget-val{font-size:14px;font-weight:600;}
-.ap-narrator{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:14px;min-height:60px;}
-.ap-narrator-title{font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);margin-bottom:6px;}
-.ap-narrator-text{font-size:12px;line-height:1.6;color:var(--t2);}
-.ap-hitl{display:none;background:var(--warn-bg);border:1.5px solid var(--warn-bd);border-radius:var(--r);padding:14px 18px;margin-bottom:14px;}
 
 /* ── KPI Row ─────────────────────────────────────────────── */
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
@@ -215,7 +256,7 @@ tr:last-child td{border-bottom:none;}
 #progress-fill{height:100%;background:linear-gradient(90deg,var(--game),#F59E0B);border-radius:100px;transition:width .4s ease;}
 #progress-label-text{font-family:var(--fm);font-size:10px;color:var(--t3);white-space:nowrap;}
 .pnl-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}
-.pnl-table th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:6px 12px;text-align:left;border-bottom:1.5px solid var(--border);background:var(--surface2);}
+.pnl-table th{position:static;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:6px 12px;text-align:left;border-bottom:1.5px solid var(--border);background:var(--surface2);}
 .pnl-table td{padding:6px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .pnl-metric-col{width:110px;}
 .pnl-you-hdr{color:var(--info);}
@@ -322,6 +363,9 @@ tr:last-child td{border-bottom:none;}
     <div class="nav-label">Invest Game</div>
     <div class="nav-item active" data-s="investgame" onclick="show('investgame',this)">
       <span class="nav-icon">🎮</span> Invest Game
+    </div>
+    <div class="nav-item" data-s="journey" onclick="show('journey',this)">
+      <span class="nav-icon">🧭</span> Journey
     </div>
     <div class="nav-item" data-s="concepts" onclick="show('concepts',this)">
       <span class="nav-icon">📚</span> Concepts
@@ -463,7 +507,7 @@ tr:last-child td{border-bottom:none;}
       <span style="font-size:11px;color:var(--t3)" id="journal-sub">—</span>
     </div>
     <div style="padding:0">
-    <div class="tbl-wrap" style="overflow-y:auto;max-height:360px;margin-top:0">
+    <div class="tbl-wrap" style="overflow-y:auto;max-height:360px;margin:0;border:none;box-shadow:none;border-radius:0">
       <table id="game-table">
         <thead>
           <tr>
@@ -533,6 +577,20 @@ tr:last-child td{border-bottom:none;}
     </div>
     </div>
   </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Section: Journey (embedded investor journey flow — /journey)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="sec-journey">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Journey</div>
+      <div class="page-sub">Set your goals, timeline &amp; risk profile — your path into the Invest Game</div>
+    </div>
+  </div>
+  <iframe id="journey-frame" data-src="/journey" title="Investor Journey"
+          style="width:100%;height:calc(100vh - 190px);min-height:520px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);"></iframe>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -936,33 +994,112 @@ tr:last-child td{border-bottom:none;}
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Section: Agent Performance
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="sec-agent-performance">
+<section class="section rita-parity" id="sec-agent-performance">
   <div class="page-hdr">
     <div>
       <div class="page-title">Agent Performance</div>
-      <div class="page-sub">Per-agent scorecards and invocation metrics <span id="igap-mode" class="badge neu">—</span></div>
+      <div class="page-sub">Per-agent KPIs for the 7 investment-workflow agents — the trading-decision pipeline</div>
+    </div>
+    <div class="hdr-actions">
+      <span id="agent-perf-mode" class="badge warn" title="Agents without a trained RL policy use illustrative baseline data">Demo data</span>
+      <span style="font-size:11px;color:var(--t3);align-self:center">Updated: <span id="agent-perf-updated">—</span></span>
+      <button class="btn btn-ghost btn-sm" onclick="loadAgentPerformance()">↺ Refresh</button>
     </div>
   </div>
 
+  <!-- Aggregate KPI cards -->
+  <div class="kpi-row-4">
+    <div class="card">
+      <div class="kpi-label">Total Invocations (30d)</div>
+      <div class="kpi-value" id="agent-perf-total">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg Outcome Match</div>
+      <div class="kpi-value neu" id="agent-perf-match">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg RL Reward</div>
+      <div class="kpi-value" id="agent-perf-reward">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg Data Coverage</div>
+      <div class="kpi-value" id="agent-perf-coverage">—</div>
+    </div>
+  </div>
+
+  <!-- Agent scorecards — one panel per agent, 4 measurable parameters (mirrors Ops Agent Builds) -->
   <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Agent Scorecards</span>
+      <span class="card-sub">Outcome Match · Avg RL Reward · Data Coverage · Invocations (30d)</span>
+    </div>
+    <div class="agp-sc-grid" id="agent-perf-scorecards">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
 
-    <div class="kpi-row">
-      <div class="kpi-card"><div class="kpi-val" id="igap-total">—</div><div class="kpi-lbl">Total Invocations</div></div>
-      <div class="kpi-card"><div class="kpi-val" id="igap-match">—</div><div class="kpi-lbl">Outcome Match</div></div>
-      <div class="kpi-card"><div class="kpi-val" id="igap-reward">—</div><div class="kpi-lbl">Avg Reward</div></div>
-      <div class="kpi-card"><div class="kpi-val" id="igap-coverage">—</div><div class="kpi-lbl">Data Coverage</div></div>
+  <!-- Invocations chart (40%) + per-agent detail table (60%) in one row -->
+  <div style="display:grid;grid-template-columns:2fr 3fr;gap:14px;align-items:start">
+    <div class="chart-wrap" style="margin-bottom:0">
+      <div class="chart-title">Invocations by Agent — last 30 days</div>
+      <div class="chart-box" style="height:320px"><canvas id="agent-perf-chart"></canvas></div>
     </div>
 
-    <div id="igap-scorecards" class="agp-sc-grid" style="margin-bottom:16px;"></div>
-
-    <div class="chart-wrap" style="height:200px"><canvas id="igap-chart"></canvas></div>
-
-    <div class="tbl-wrap" style="margin-top:14px;">
-      <table>
-        <thead><tr><th>Agent</th><th style="text-align:right">Outcome</th><th style="text-align:right">Reward</th><th style="text-align:right">Coverage</th><th style="text-align:right">Invocations</th><th style="text-align:right">Trend</th></tr></thead>
-        <tbody id="igap-table"></tbody>
-      </table>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hdr"><span class="card-title">Per-Agent Detail</span></div>
+      <div class="tbl-wrap" style="max-height:320px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th style="text-align:right">Outcome Match</th>
+              <th style="text-align:right">Avg RL Reward</th>
+              <th style="text-align:right">Data Coverage</th>
+              <th style="text-align:right">Invocations (30d)</th>
+              <th style="text-align:right">Trend vs Prior 30d</th>
+            </tr>
+          </thead>
+          <tbody id="agent-perf-table">
+            <tr><td colspan="6" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
+
+  <!-- Performance over a custom period (reuses the Scenarios date-selector pattern) -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-hdr">
+      <span class="card-title">Performance Over Period</span>
+      <span class="card-sub">Team invocations &amp; outcome-match across a date range</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <span style="font-size:11px;color:var(--t3);align-self:center">Quick select:</span>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-01-01','2025-03-31')">Q1 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-04-01','2025-06-30')">Q2 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-07-01','2025-09-30')">Q3 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-10-01','2025-12-31')">Q4 2025</button>
+      <button class="btn btn-ghost btn-sm" onclick="setAgentPerfPeriod('2025-01-01','2026-06-30')">2025–26</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">From Date</label>
+        <input class="form-input" type="date" id="inp-ap-from" value="2025-01-01" min="2001-01-01" max="2026-12-31">
+      </div>
+      <div class="form-group">
+        <label class="form-label">To Date</label>
+        <input class="form-input" type="date" id="inp-ap-to" value="2026-06-30" min="2001-01-01" max="2026-12-31">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <button class="btn btn-build" onclick="loadAgentPerfTimeline()" id="btn-ap-timeline">▶ Show</button>
+      <span id="agent-perf-timeline-summary" style="font-size:12px;color:var(--t3);font-family:var(--fm)"></span>
+    </div>
+    <div class="chart-wrap" style="margin-bottom:0;margin-top:8px">
+      <div class="chart-title">Team Performance Timeline — invocations &amp; outcome-match</div>
+      <div class="chart-box" style="height:300px"><canvas id="agent-perf-timeline-chart"></canvas></div>
+    </div>
+    <div id="agent-perf-timeline-empty" class="empty" style="display:none">No agent activity recorded in this period.</div>
   </div>
 </section>
 
@@ -973,64 +1110,98 @@ tr:last-child td{border-bottom:none;}
   <div class="page-hdr">
     <div>
       <div class="page-title">Agent Builds</div>
-      <div class="page-sub">Pipeline run history, scorecards, and grounding trend</div>
+      <div class="page-sub">AgentOps run history, scorecards, grounding trend, failure heatmap, token usage, skill versions</div>
     </div>
   </div>
-  <div id="igab-grid"></div>
+  <div id="ab-grid" class="ab-grid">
+    <div class="loading">Loading…</div>
+  </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Section: Agent Panel (16-day simulation)
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="sec-agent-panel">
+<section class="section rita-parity" id="sec-agent-panel">
   <div class="page-hdr">
     <div>
       <div class="page-title">Agent Panel</div>
-      <div class="page-sub">6-agent ASML trading scenario <span id="igap-panel-status" class="badge neu">Ready</span></div>
+      <div class="page-sub">Step through a multi-agent investment decision on ASML — April 2026</div>
+    </div>
+    <div class="hdr-actions">
+      <span id="agent-panel-status" class="badge neu">Ready</span>
     </div>
   </div>
 
-  <div class="card">
-
-    <div style="display:flex;gap:10px;margin-bottom:14px;">
-      <button id="igap-run-btn" class="btn-play" onclick="agentPanelStep()" style="font-size:12px;padding:7px 16px;">Run Day 1</button>
-      <button class="btn-play" onclick="resetAgentPanel()" style="font-size:12px;padding:7px 16px;background:var(--t3);">Reset</button>
+  <!-- Narrator (50% width) + 5 agent-state widgets — single row -->
+  <div style="display:grid;grid-template-columns:15fr 2fr 2fr 2fr 2fr 2fr;gap:10px;margin-bottom:14px;align-items:stretch">
+    <div id="ap-narrator-card" class="card">
+      <div class="card-hdr">
+        <span class="card-title" id="ap-narrator-title">ABOUT THIS DEMO</span>
+      </div>
+      <div id="ap-narrator-text" class="card-body" style="font-size:12px;line-height:1.5;color:var(--t2);min-height:32px"></div>
     </div>
-
-    <!-- Narrator -->
-    <div class="ap-narrator">
-      <div class="ap-narrator-title" id="igap-narrator-title">ABOUT THIS DEMO</div>
-      <div class="ap-narrator-text" id="igap-narrator-text"></div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Compliance Gate</div>
+      <div id="ap-compliance" style="font-weight:700;font-size:0.85rem">PENDING</div>
     </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Context</div>
+      <div id="ap-regime" style="font-size:11px;color:var(--t2)">—</div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Strategy</div>
+      <div id="ap-policy" style="font-size:10px;color:var(--t2)">—</div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Probability</div>
+      <div id="ap-probability" style="font-size:13px;font-weight:700">—</div>
+    </div>
+    <div class="card" style="padding:8px">
+      <div class="card-title" style="font-size:0.7rem;margin-bottom:3px">Agent Decision</div>
+      <div id="ap-proposal" style="font-size:12px;font-weight:700">—</div>
+    </div>
+  </div>
 
-    <!-- HITL panel -->
-    <div class="ap-hitl" id="igap-hitl-panel">
-      <div style="font-family:var(--fm);font-size:10px;font-weight:600;text-transform:uppercase;color:var(--warn);margin-bottom:6px;">Human Decision Required</div>
-      <div id="igap-hitl-summary" style="font-size:12px;color:var(--t2);margin-bottom:10px;"></div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="approveAgentProposal()" style="padding:5px 14px;font-size:11px;font-weight:600;background:var(--build);color:#fff;border:none;border-radius:4px;cursor:pointer;">Approve</button>
-        <button onclick="rejectAgentProposal()" style="padding:5px 14px;font-size:11px;font-weight:600;background:var(--danger);color:#fff;border:none;border-radius:4px;cursor:pointer;">Reject</button>
+  <!-- Chart + Right panel row -->
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="chart-box h220"><canvas id="ap-chart"></canvas></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <!-- Run Date + controls in one card -->
+      <div class="card" style="padding:10px">
+        <div class="card-title" style="font-size:0.7rem;margin-bottom:4px">Run Date</div>
+        <div id="ap-run-date" style="font-size:13px;font-weight:700;color:var(--t2);margin-bottom:10px">—</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-build btn-sm" id="ap-run-btn" onclick="agentPanelStep()">▶ Run Day</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetAgentPanel()">↺ Reset</button>
+        </div>
+      </div>
+      <!-- HITL — shown only when PM proposes a BUY -->
+      <div id="ap-hitl-panel" style="display:none">
+        <div class="card" style="border-color:var(--warn-bd);background:var(--warn-bg)">
+          <div class="card-hdr">
+            <span class="card-title" style="color:var(--warn);font-size:0.75rem">◈ Human-in-the-Loop</span>
+          </div>
+          <div id="ap-hitl-summary" style="font-size:12px;color:var(--t2);margin-bottom:10px;line-height:1.5"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-build btn-sm" onclick="approveAgentProposal()">✓ Approve</button>
+            <button class="btn btn-ghost btn-sm" style="border-color:var(--danger-bd);color:var(--danger)" onclick="rejectAgentProposal()">✕ Reject</button>
+          </div>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- Widgets -->
-    <div class="ap-grid">
-      <div class="ap-widget"><div class="ap-widget-label">Date</div><div class="ap-widget-val" id="igap-run-date">—</div></div>
-      <div class="ap-widget"><div class="ap-widget-label">Regime</div><div class="ap-widget-val" id="igap-regime">—</div></div>
-      <div class="ap-widget"><div class="ap-widget-label">Policy</div><div class="ap-widget-val" id="igap-policy">—</div></div>
-      <div class="ap-widget"><div class="ap-widget-label">Probability</div><div class="ap-widget-val" id="igap-probability">—</div></div>
-      <div class="ap-widget"><div class="ap-widget-label">Proposal</div><div class="ap-widget-val" id="igap-proposal">—</div></div>
-      <div class="ap-widget"><div class="ap-widget-label">Compliance</div><div class="ap-widget-val" id="igap-compliance">PENDING</div></div>
-    </div>
-
-    <!-- Chart -->
-    <div class="chart-wrap" style="height:260px"><canvas id="igap-panel-chart"></canvas></div>
-
-    <!-- Audit log -->
-    <div class="tbl-wrap" style="margin-top:14px;">
-      <table>
-        <thead><tr><th>Date</th><th>Context</th><th>Strategy</th><th>Probability</th><th>Portfolio Mgr</th><th>Compliance</th></tr></thead>
-        <tbody id="igap-audit-body"></tbody>
+  <!-- Audit table -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Reasoning Audit Trail</span></div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Date</th><th>Context</th><th>Strategy</th><th>Probability</th><th>Portfolio Manager</th><th>Compliance</th>
+        </tr></thead>
+        <tbody id="ap-audit-body"></tbody>
       </table>
     </div>
   </div>
@@ -1046,6 +1217,25 @@ tr:last-child td{border-bottom:none;}
     <img id="chart-modal-img" style="max-width:100%;border-radius:6px;">
   </div>
 </div>
+
+<!-- Agent Builds chart expand modal (mirrors ops.html) -->
+<div id="ab-chart-modal" onclick="closeChartModal()" style="
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.72);
+  align-items:center;justify-content:center;cursor:zoom-out;">
+  <div onclick="event.stopPropagation()" style="
+    background:var(--surface);border-radius:var(--r);
+    padding:24px;width:94vw;max-width:94vw;max-height:96vh;
+    overflow:auto;position:relative;box-sizing:border-box;">
+    <button onclick="closeChartModal()" style="
+      position:absolute;top:10px;right:14px;
+      background:none;border:none;font-size:22px;
+      cursor:pointer;color:var(--t2);line-height:1;">✕</button>
+    <div id="ab-chart-modal-title" style="font-family:var(--fs);font-size:16px;font-weight:600;margin-bottom:16px;padding-right:28px;color:var(--t1)"></div>
+    <img id="ab-chart-modal-img" style="width:100%;max-height:88vh;display:block;border-radius:4px;object-fit:contain;" />
+  </div>
+</div>
+<script>document.addEventListener('keydown', e => { if (e.key === 'Escape' && window.closeChartModal) closeChartModal(); });</script>
 
 <script>
 (function(){

@@ -205,7 +205,7 @@ Script loading: Chart.js + annotation plugin loaded via CDN (kept). Nav-collapse
 
 ## 5b. Module Structure — `dashboard/js/investgame-app/`
 
-Standalone top-level page (`investgame-app.html`) — elevated Invest Game with 6 sidebar pages.
+Standalone top-level page (`investgame-app.html`) — elevated Invest Game with 7 sidebar pages.
 
 | File | Responsibility | Key exports |
 |---|---|---|
@@ -215,12 +215,14 @@ Standalone top-level page (`investgame-app.html`) — elevated Invest Game with 
 | `nav.js` | Show/hide sections, sidebar toggle, active state | `show`, `registerLoader`, `toggleSidebar`, `getCurrentSection` |
 | `concepts.js` | Investment Workflow & Agents — 8 tabbed panels (ported from rita/learnings.js agent-workflow section) | `loadConcepts`, `switchAgentTab` |
 | `crisp-dm.js` | CRISP-DM methodology (ported from ds/concepts.js — phases 1, 4, 5) | `loadCrispDm`, `switchCrispTab` |
-| `agent-performance.js` | Per-agent scorecards + invocation chart (ported from rita/agent-performance.js) | `loadAgentPerformance` |
-| `agent-builds.js` | Pipeline run history + grounding trend (ported from ops/agent-builds.js) | `loadAgentBuilds` |
-| `agent-panel.js` | 16-day ASML simulation (ported from rita/agent-panel.js) | `loadAgentPanel`, `agentPanelStep`, `resetAgentPanel`, `approveAgentProposal`, `rejectAgentProposal` |
+| `agent-performance.js` | Full port of rita/agent-performance.js (Feature 32) — same `agent-perf-*` element IDs and layout: KPI row, scorecards, invocation chart + detail table, Performance Over Period timeline | `loadAgentPerformance`, `setAgentPerfPeriod`, `loadAgentPerfTimeline` |
+| `agent-builds.js` | Verbatim copy of ops/agent-builds.js — full 4-row panel grid (scorecards, run history, skill versions, token forecast, grounding trend, metric trends, token cost, failure heatmap, token estimator) into `#ab-grid`; chart-expand modal `#ab-chart-modal` | `loadAgentBuilds`, `submitTokenEstimate`, `toggleEstimateWidget`, `closeChartModal` |
+| `agent-panel.js` | Verbatim copy of rita/agent-panel.js (16-day ASML simulation) — same `ap-*` element IDs and layout; uses shared i18n + localStorage history like RITA | `loadAgentPanel`, `agentPanelStep`, `resetAgentPanel`, `approveAgentProposal`, `rejectAgentProposal` |
 | `main.js` | Entry point — imports all loaders, registers section loaders, exposes `window.*` bindings | (none — side-effects only) |
 
-**Section IDs:** `sec-investgame`, `sec-concepts`, `sec-crisp-dm`, `sec-agent-performance`, `sec-agent-builds`, `sec-agent-panel`
+**Section IDs:** `sec-investgame`, `sec-journey`, `sec-concepts`, `sec-crisp-dm`, `sec-agent-performance`, `sec-agent-builds`, `sec-agent-panel`
+
+**Journey section:** `sec-journey` embeds `mobileapp/investor-flow/v2/invest-dashboard.html` via a lazy-loaded iframe (`data-src="/journey"`; src set on first visit by the `journey` loader in `main.js`). The embedded page hides its own topbar when iframed (`html.embedded` class). `/onboarding` is a 301 redirect to `/journey` (renamed 2026-07-05); the old top-nav "Onboarding" link on `index.html` was removed.
 
 ---
 
