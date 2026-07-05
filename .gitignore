@@ -11,8 +11,11 @@ git-key.txt
 !.env.example
 
 # ── Local config overrides (may contain personal paths or secrets) ────────────
-riia-jun-release/config/production.yaml
-riia-jun-release/config/staging.yaml
+riia-aug-release/config/production.yaml
+riia-aug-release/config/staging.yaml
+
+# ── Inner prod repo (has its own .git → riia-jun-release-prod) ───────────────
+riia-aug-release/
 
 # ── API keys and tokens ───────────────────────────────────────────────────────
 *api-key*
