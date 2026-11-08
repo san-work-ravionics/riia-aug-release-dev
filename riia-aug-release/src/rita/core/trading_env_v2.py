@@ -63,6 +63,10 @@ HEDGE_COST_PER_DAY = 0.0036   # amortised protective-put carry while hedged (bre
 # Episode terminates with a large negative reward when breached, regardless of
 # tolerance level. Tolerance modulates de-risking aggressiveness only.
 HARD_MDD_LIMIT       = -0.10
+
+# Static baseline: the hedge switches off once the underlying's drawdown has recovered to this
+# fraction of the tolerance (0.5 => a -15% tolerance releases at -7.5%).  Calibration default.
+STATIC_RELEASE_FRACTION = 0.5
 MDD_TERMINAL_PENALTY = -5.0
 
 # Differential Sharpe Ratio (Moody & Saffell 1998) hyper-params.
@@ -540,6 +544,13 @@ def run_static_baseline_v2(df: pd.DataFrame, risk_tolerance: str = "medium") -> 
     learning — it only reacts after the breach, whereas the RL policy can hedge
     pre-emptively. Identical per-step return mechanics to ``run_episode_v2`` so
     the two are directly comparable on the same DataFrame; same result shape.
+
+    Recalibrated 2026-11 (F32 3.5.7): the trigger and release now read the
+    UNDERLYING's drawdown, not the portfolio's own.  Reading the portfolio's drawdown
+    created a carry death spiral: once hedged, the break-even carry kept the portfolio
+    in drawdown, so the hedge never switched off (MDD -93% NIFTY, -75% RELIANCE).
+    Hedge on when the underlying's drawdown <= tolerance; off again once it has
+    recovered to ``STATIC_RELEASE_FRACTION`` of the tolerance (hysteresis).
     """
     mdd_tol = RISK_TOLERANCE_MDD.get(risk_tolerance, RISK_TOLERANCE_MDD["medium"])
 
@@ -552,19 +563,23 @@ def run_static_baseline_v2(df: pd.DataFrame, risk_tolerance: str = "medium") -> 
         raise ValueError("DataFrame has no valid rows after dropping NaN indicators.")
 
     portfolio_value = 1.0
-    peak_value = 1.0
     portfolio_values = [1.0]
     benchmark_values = [1.0]
     allocations: list[float] = []
     hedge_flags: list[float] = []
     dates = [data.index[0]]
     close_prices = [float(data["Close"].iloc[0])]
+    bench_peak = 1.0
+    hedged = False
 
     for i in range(len(data) - 1):
-        current_dd = (portfolio_value - peak_value) / peak_value
-        # Static rule: full allocation; hedge iff drawdown has breached tolerance.
+        bench_dd = (benchmark_values[-1] - bench_peak) / bench_peak
+        # Static rule: full allocation; hedge on at the tolerance breach, off on recovery.
         allocation = 1.0
-        hedged = current_dd <= mdd_tol
+        if hedged:
+            hedged = bench_dd <= mdd_tol * STATIC_RELEASE_FRACTION
+        else:
+            hedged = bench_dd <= mdd_tol
 
         next_row = data.iloc[i + 1]
         daily_ret = float(next_row["daily_return"])
@@ -574,9 +589,9 @@ def run_static_baseline_v2(df: pd.DataFrame, risk_tolerance: str = "medium") -> 
         else:
             portfolio_ret = allocation * daily_ret
         portfolio_value *= (1 + portfolio_ret)
-        peak_value = max(peak_value, portfolio_value)
 
         bench_value = benchmark_values[-1] * (1 + daily_ret)
+        bench_peak = max(bench_peak, bench_value)
 
         portfolio_values.append(portfolio_value)
         benchmark_values.append(bench_value)
