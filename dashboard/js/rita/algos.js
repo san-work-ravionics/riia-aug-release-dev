@@ -1,6 +1,6 @@
 // ── Algos — registry, register form, and performance dashboard (F46) ─────────
 import { api } from './api.js';
-import { mkChart, C } from './charts.js';
+import { mkChart, destroyChart, C } from './charts.js';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -66,10 +66,10 @@ function _renderRegistry(algos) {
       <td>${_statusBadge(a.status)}</td>
       <td class="algo-actions">
         ${a.status !== 'live'
-          ? `<button class="btn btn-xs btn-build" onclick="algoSetLive('${_esc(a.algo_id)}')">Go Live</button>`
-          : `<button class="btn btn-xs btn-ghost" onclick="algoPause('${_esc(a.algo_id)}')">Pause</button>`}
-        <button class="btn btn-xs btn-ghost" onclick="algoShowPerf('${_esc(a.algo_id)}', '${_esc(a.name)}')">Perf</button>
-        <button class="btn btn-xs btn-danger-ghost" onclick="algoDelete('${_esc(a.algo_id)}')">Delete</button>
+          ? `<button class="btn btn-sm btn-build" onclick="algoSetLive('${_esc(a.algo_id)}')">Go Live</button>`
+          : `<button class="btn btn-sm btn-ghost" onclick="algoPause('${_esc(a.algo_id)}')">Pause</button>`}
+        <button class="btn btn-sm btn-ghost" onclick="algoShowPerf('${_esc(a.algo_id)}', '${_esc(a.name)}')">Perf</button>
+        <button class="btn btn-sm btn-danger-ghost" onclick="algoDelete('${_esc(a.algo_id)}')">Delete</button>
       </td>
     </tr>`).join('');
 
@@ -175,12 +175,108 @@ export async function algoDelete(algo_id) {
 
 const _DDQN_NA_TITLE = 'Trade-level data unavailable for DDQN — requires signal-capture table';
 
+let _perfData = null;
+let _currentYear = 2026;
+
+function _renderPerfCharts(year) {
+  if (!_perfData) return;
+  const yStr = String(year);
+
+  const eq = (_perfData.equity_curve || []).filter(r => r.date.startsWith(yStr));
+  if (eq.length > 0) {
+    mkChart('algo-chart-equity', {
+      type: 'line',
+      data: {
+        labels: eq.map(r => r.date),
+        datasets: [{
+          label: 'Cumulative Pts',
+          data: eq.map(r => r.cumulative_pts),
+          borderColor: C.build,
+          backgroundColor: 'transparent',
+          tension: 0.3,
+          pointRadius: 0,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { maxTicksLimit: 8 } } },
+      },
+    });
+  } else {
+    destroyChart('algo-chart-equity');
+  }
+
+  const sm = (_perfData.signal_markers || []).filter(r => r.date.startsWith(yStr));
+  if (sm.length > 0) {
+    const buys = sm.filter(r => r.signal === 'BUY');
+    const sells = sm.filter(r => r.signal === 'SELL');
+    mkChart('algo-chart-signals', {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'BUY',
+            data: buys.map((r, i) => ({ x: i, y: r.close })),
+            backgroundColor: C.build,
+            pointRadius: 5,
+            pointStyle: 'triangle',
+          },
+          {
+            label: 'SELL',
+            data: sells.map((r, i) => ({ x: i, y: r.close })),
+            backgroundColor: C.danger,
+            pointRadius: 5,
+            pointStyle: 'triangle',
+            rotation: 180,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: true } },
+      },
+    });
+  } else {
+    destroyChart('algo-chart-signals');
+  }
+
+  const recent = (_perfData.recent_signals || []).filter(r => r.date.startsWith(yStr));
+  if (recent.length === 0) {
+    _setEl('algos-recent-tbody', `<tr><td colspan="5" class="empty-row">No signals for ${_esc(yStr)}</td></tr>`);
+  } else {
+    const rows = recent.map(r => `
+      <tr>
+        <td>${_esc(r.date)}</td>
+        <td><span class="algo-sig-badge ${r.signal === 'BUY' ? 'sig-buy' : 'sig-sell'}">${_esc(r.signal)}</span></td>
+        <td>${r.close !== null && r.close !== undefined ? _fmt(r.close, 2) : '—'}</td>
+        <td>${r.confidence !== null && r.confidence !== undefined ? _fmt(r.confidence * 100, 1) + '%' : '—'}</td>
+        <td class="${r.outcome === 'target' ? 'col-build' : r.outcome === 'stopped' ? 'col-danger' : ''}">${_esc(r.outcome || '—')}</td>
+      </tr>`).join('');
+    _setEl('algos-recent-tbody', rows);
+  }
+}
+
+export function algoSetYear(year) {
+  _currentYear = year;
+  [2022, 2023, 2024, 2025, 2026].forEach(y => {
+    const btn = document.getElementById(`algo-year-${y}`);
+    if (!btn) return;
+    if (y === year) {
+      btn.className = btn.className.replace(/\bbtn-ghost\b/g, 'btn-build');
+    } else {
+      btn.className = btn.className.replace(/\bbtn-build\b/g, 'btn-ghost');
+    }
+  });
+  _renderPerfCharts(year);
+}
+
 export async function algoShowPerf(algo_id, algo_name) {
+  _currentYear = 2026;
   const panel = document.getElementById('algos-perf-panel');
   if (panel) panel.style.display = 'block';
   _setEl('algos-perf-title', _esc(algo_name) + ' Performance');
 
-  // Reset KPI tiles
   const kpiIds = [
     'algo-kpi-win-rate', 'algo-kpi-total-pts', 'algo-kpi-profit-factor',
     'algo-kpi-signal-rate', 'algo-kpi-avg-confidence', 'algo-kpi-max-drawdown',
@@ -188,11 +284,12 @@ export async function algoShowPerf(algo_id, algo_name) {
     'algo-kpi-max-consec-losses',
   ];
   kpiIds.forEach(id => _setVal(id, '…'));
-
   _setEl('algos-recent-tbody', '<tr><td colspan="5">Loading…</td></tr>');
+  algoSetYear(2026);
 
   try {
     const data = await api(`/api/v1/experience/rita/algo-performance?algo_id=${encodeURIComponent(algo_id)}`);
+    _perfData = data;
     const k = data.kpis || {};
 
     function _kv(id, val, unit, decimals) {
@@ -218,78 +315,7 @@ export async function algoShowPerf(algo_id, algo_name) {
     _kv('algo-kpi-max-consec-wins', k.max_consec_wins, '', 0);
     _kv('algo-kpi-max-consec-losses', k.max_consec_losses, '', 0);
 
-    // Chart 1: equity curve
-    const eq = data.equity_curve || [];
-    if (eq.length > 0) {
-      mkChart('algo-chart-equity', {
-        type: 'line',
-        data: {
-          labels: eq.map(r => r.date),
-          datasets: [{
-            label: 'Cumulative Pts',
-            data: eq.map(r => r.cumulative_pts),
-            borderColor: C.build,
-            backgroundColor: 'transparent',
-            tension: 0.3,
-            pointRadius: 0,
-          }],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: { x: { ticks: { maxTicksLimit: 8 } } },
-        },
-      });
-    }
-
-    // Chart 2: signal markers (scatter)
-    const sm = data.signal_markers || [];
-    if (sm.length > 0) {
-      const buys = sm.filter(r => r.signal === 'BUY');
-      const sells = sm.filter(r => r.signal === 'SELL');
-      mkChart('algo-chart-signals', {
-        type: 'scatter',
-        data: {
-          datasets: [
-            {
-              label: 'BUY',
-              data: buys.map((r, i) => ({ x: i, y: r.close })),
-              backgroundColor: C.build,
-              pointRadius: 5,
-              pointStyle: 'triangle',
-            },
-            {
-              label: 'SELL',
-              data: sells.map((r, i) => ({ x: i, y: r.close })),
-              backgroundColor: C.danger,
-              pointRadius: 5,
-              pointStyle: 'triangle',
-              rotation: 180,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: true } },
-        },
-      });
-    }
-
-    // Recent signals table
-    const recent = data.recent_signals || [];
-    if (recent.length === 0) {
-      _setEl('algos-recent-tbody', '<tr><td colspan="5" class="empty-row">No recent signals</td></tr>');
-    } else {
-      const rows = recent.map(r => `
-        <tr>
-          <td>${_esc(r.date)}</td>
-          <td><span class="algo-sig-badge ${r.signal === 'BUY' ? 'sig-buy' : 'sig-sell'}">${_esc(r.signal)}</span></td>
-          <td>${r.close !== null && r.close !== undefined ? _fmt(r.close, 2) : '—'}</td>
-          <td>${r.confidence !== null && r.confidence !== undefined ? _fmt(r.confidence * 100, 1) + '%' : '—'}</td>
-          <td class="${r.outcome === 'target' ? 'col-build' : r.outcome === 'stopped' ? 'col-danger' : ''}">${_esc(r.outcome || '—')}</td>
-        </tr>`).join('');
-      _setEl('algos-recent-tbody', rows);
-    }
+    _renderPerfCharts(_currentYear);
   } catch (e) {
     kpiIds.forEach(id => _setVal(id, '—'));
     _setEl('algos-recent-tbody', `<tr><td colspan="5" class="empty-row">Error: ${_esc(e.message)}</td></tr>`);
@@ -327,3 +353,4 @@ window.algoSetLive      = algoSetLive;
 window.algoPause        = algoPause;
 window.algoDelete       = algoDelete;
 window.algoShowPerf     = algoShowPerf;
+window.algoSetYear      = algoSetYear;

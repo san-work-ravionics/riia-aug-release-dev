@@ -664,9 +664,40 @@ tr:hover td{background:var(--surface2);}
       <div class="page-title">Algos</div>
       <div class="page-sub">Register ASTA or DDQN algorithms, set them live, and inspect performance dashboards</div>
     </div>
-    <div class="hdr-actions">
-      <button class="btn btn-ghost btn-sm" onclick="algoRegisterToggle()">+ Register</button>
-      <button class="btn btn-ghost btn-sm" onclick="loadAlgos()">Refresh</button>
+  </div>
+
+  <!-- Concepts cards -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">How It Works</span></div>
+      <div style="padding:12px;font-size:13px;color:var(--t2)">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="background:var(--build);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">1</span>
+            <div><strong>Register</strong> — name an ASTA Setup or DDQN algorithm and link it to an instrument</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="background:var(--build);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">2</span>
+            <div><strong>Set Live</strong> — activate the algo; it will start appearing in signal feeds and backtests</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="background:var(--build);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">3</span>
+            <div><strong>View Performance</strong> — click Perf on any algo to open the equity curve, signal markers, and KPI dashboard</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Technical</span></div>
+      <div style="padding:12px;font-size:13px;color:var(--t2)">
+        <div style="margin-bottom:8px"><strong>Data sources</strong></div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+          <div><code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px">asta_labeled_dataset.csv</code> — historical ASTA setups with outcomes, used for ASTA algo KPI computation</div>
+          <div><code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px">backtest_runs</code> — DDQN simulation logs, equity curves, and trade-level records stored per algo</div>
+        </div>
+        <div style="margin-bottom:6px"><strong>KPI computation</strong> — Win Rate, Profit Factor, and drawdown from resolved trade records; confidence from model signal scores</div>
+        <div><strong>Tier architecture</strong> — Experience Layer (<code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px">/api/experience</code>) aggregates data from System CRUD and backtest services, returning pre-shaped KPI + chart payloads</div>
+      </div>
     </div>
   </div>
 
@@ -715,7 +746,13 @@ tr:hover td{background:var(--surface2);}
 
   <!-- Registry Table -->
   <div class="card" style="margin-bottom:16px">
-    <div class="card-hdr"><span class="card-title">Algorithm Registry</span></div>
+    <div class="card-hdr">
+      <span class="card-title">Algorithm Registry</span>
+      <div class="hdr-actions">
+        <button class="btn btn-ghost btn-sm" onclick="algoRegisterToggle()">+ Register</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadAlgos()">↺ Refresh</button>
+      </div>
+    </div>
     <div style="overflow-x:auto">
       <table class="data-table">
         <thead>
@@ -740,68 +777,80 @@ tr:hover td{background:var(--surface2);}
       <span id="algos-perf-title" class="card-title">Performance</span>
     </div>
 
-    <!-- KPI Strip (10 tiles) -->
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 12px 0">
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Win Rate</div>
-        <div class="kpi-val" id="algo-kpi-win-rate">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Total Pts</div>
-        <div class="kpi-val" id="algo-kpi-total-pts">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Profit Factor</div>
-        <div class="kpi-val" id="algo-kpi-profit-factor">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Signal Rate</div>
-        <div class="kpi-val" id="algo-kpi-signal-rate">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Avg Confidence</div>
-        <div class="kpi-val" id="algo-kpi-avg-confidence">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Max Drawdown</div>
-        <div class="kpi-val" id="algo-kpi-max-drawdown">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Avg Win</div>
-        <div class="kpi-val" id="algo-kpi-avg-win">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Avg Loss</div>
-        <div class="kpi-val" id="algo-kpi-avg-loss">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Max Consec Wins</div>
-        <div class="kpi-val" id="algo-kpi-max-consec-wins">—</div>
-      </div>
-      <div class="kpi kpi-sm">
-        <div class="kpi-label">Max Consec Losses</div>
-        <div class="kpi-val" id="algo-kpi-max-consec-losses">—</div>
-      </div>
+    <!-- Year tabs -->
+    <div style="display:flex;align-items:center;gap:4px;padding:10px 16px;border-bottom:1px solid var(--bdr)">
+      <span style="font-size:11px;color:var(--t3);margin-right:4px">Year:</span>
+      <button class="btn btn-sm btn-ghost" id="algo-year-2022" onclick="algoSetYear(2022)">2022</button>
+      <button class="btn btn-sm btn-ghost" id="algo-year-2023" onclick="algoSetYear(2023)">2023</button>
+      <button class="btn btn-sm btn-ghost" id="algo-year-2024" onclick="algoSetYear(2024)">2024</button>
+      <button class="btn btn-sm btn-ghost" id="algo-year-2025" onclick="algoSetYear(2025)">2025</button>
+      <button class="btn btn-sm btn-build" id="algo-year-2026" onclick="algoSetYear(2026)">2026</button>
     </div>
 
-    <!-- Charts Row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px">
-      <div class="chart-wrap">
-        <div class="chart-title">Equity Curve <span style="font-weight:400;color:var(--t3);font-size:11px">— cumulative pts over resolved trades</span></div>
-        <div class="chart-box" style="height:220px"><canvas id="algo-chart-equity"></canvas></div>
+    <!-- 60% charts (stacked) + 40% KPIs (3+3+2+2 rows) -->
+    <div style="display:grid;grid-template-columns:60% 40%;padding:16px 16px 8px;gap:16px">
+      <!-- Charts: stacked vertically -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="chart-wrap">
+          <div class="chart-title">Equity Curve <span style="font-weight:400;color:var(--t3);font-size:11px">— cumulative pts over resolved trades</span></div>
+          <div class="chart-box" style="height:200px"><canvas id="algo-chart-equity"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Signal Markers <span style="font-weight:400;color:var(--t3);font-size:11px">— ▲ BUY · ▼ SELL</span></div>
+          <div class="chart-box" style="height:200px"><canvas id="algo-chart-signals"></canvas></div>
+        </div>
       </div>
-      <div class="chart-wrap">
-        <div class="chart-title">Signal Markers <span style="font-weight:400;color:var(--t3);font-size:11px">— ▲ BUY · ▼ SELL</span></div>
-        <div class="chart-box" style="height:220px"><canvas id="algo-chart-signals"></canvas></div>
+      <!-- KPIs: 3+3+2+2 layout using 6-col subgrid -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-content:start">
+        <div class="kpi kpi-sm" style="grid-column:span 2">
+          <div class="kpi-label">Win Rate</div>
+          <div class="kpi-val" id="algo-kpi-win-rate">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 2">
+          <div class="kpi-label">Total Pts</div>
+          <div class="kpi-val" id="algo-kpi-total-pts">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 2">
+          <div class="kpi-label">Profit Factor</div>
+          <div class="kpi-val" id="algo-kpi-profit-factor">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 2">
+          <div class="kpi-label">Signal Rate</div>
+          <div class="kpi-val" id="algo-kpi-signal-rate">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 2">
+          <div class="kpi-label">Avg Confidence</div>
+          <div class="kpi-val" id="algo-kpi-avg-confidence">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 2">
+          <div class="kpi-label">Max Drawdown</div>
+          <div class="kpi-val" id="algo-kpi-max-drawdown">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 3">
+          <div class="kpi-label">Avg Win</div>
+          <div class="kpi-val" id="algo-kpi-avg-win">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 3">
+          <div class="kpi-label">Avg Loss</div>
+          <div class="kpi-val" id="algo-kpi-avg-loss">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 3">
+          <div class="kpi-label">Max Consec Wins</div>
+          <div class="kpi-val" id="algo-kpi-max-consec-wins">—</div>
+        </div>
+        <div class="kpi kpi-sm" style="grid-column:span 3">
+          <div class="kpi-label">Max Consec Losses</div>
+          <div class="kpi-val" id="algo-kpi-max-consec-losses">—</div>
+        </div>
       </div>
     </div>
 
     <!-- Recent Signals Table -->
     <div style="padding:0 12px 12px">
       <div class="card-hdr" style="padding:0 0 8px"><span class="card-title" style="font-size:12px">Recent Signals (last 20)</span></div>
-      <div style="overflow-x:auto">
+      <div style="max-height:220px;overflow-y:auto;overflow-x:auto">
         <table class="data-table">
-          <thead>
+          <thead style="position:sticky;top:0;z-index:1;background:var(--bg2,#1e2228)">
             <tr>
               <th>Date</th>
               <th>Signal</th>
