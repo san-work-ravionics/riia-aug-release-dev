@@ -209,32 +209,53 @@ function _renderPerfCharts(year) {
 
   const sm = (_perfData.signal_markers || []).filter(r => r.date.startsWith(yStr));
   if (sm.length > 0) {
-    const buys = sm.filter(r => r.signal === 'BUY');
-    const sells = sm.filter(r => r.signal === 'SELL');
+    const smLabels = sm.map(r => r.date);
+    const smCloses = sm.map(r => r.close);
+    const buyPts  = sm.map(r => r.signal === 'BUY'  ? r.close : null);
+    const sellPts = sm.map(r => r.signal === 'SELL' ? r.close : null);
     mkChart('algo-chart-signals', {
-      type: 'scatter',
+      type: 'line',
       data: {
+        labels: smLabels,
         datasets: [
           {
+            label: 'Price',
+            data: smCloses,
+            borderColor: C.t3,
+            backgroundColor: 'transparent',
+            pointRadius: 0,
+            tension: 0.2,
+            order: 2,
+          },
+          {
             label: 'BUY',
-            data: buys.map((r, i) => ({ x: i, y: r.close })),
+            data: buyPts,
+            borderColor: 'transparent',
             backgroundColor: C.build,
-            pointRadius: 5,
+            pointRadius: 7,
             pointStyle: 'triangle',
+            showLine: false,
+            spanGaps: false,
+            order: 1,
           },
           {
             label: 'SELL',
-            data: sells.map((r, i) => ({ x: i, y: r.close })),
+            data: sellPts,
+            borderColor: 'transparent',
             backgroundColor: C.danger,
-            pointRadius: 5,
+            pointRadius: 7,
             pointStyle: 'triangle',
             rotation: 180,
+            showLine: false,
+            spanGaps: false,
+            order: 1,
           },
         ],
       },
       options: {
-        responsive: true,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: true } },
+        scales: { x: { ticks: { maxTicksLimit: 8 } } },
       },
     });
   } else {

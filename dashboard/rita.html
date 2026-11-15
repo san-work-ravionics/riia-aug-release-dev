@@ -669,34 +669,17 @@ tr:hover td{background:var(--surface2);}
   <!-- Concepts cards -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div class="card">
-      <div class="card-hdr"><span class="card-title">How It Works</span></div>
-      <div style="padding:12px;font-size:13px;color:var(--t2)">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:flex-start;gap:10px">
-            <span style="background:var(--build);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">1</span>
-            <div><strong>Register</strong> — name an ASTA Setup or DDQN algorithm and link it to an instrument</div>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:10px">
-            <span style="background:var(--build);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">2</span>
-            <div><strong>Set Live</strong> — activate the algo; it will start appearing in signal feeds and backtests</div>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:10px">
-            <span style="background:var(--build);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">3</span>
-            <div><strong>View Performance</strong> — click Perf on any algo to open the equity curve, signal markers, and KPI dashboard</div>
-          </div>
-        </div>
+      <div class="card-hdr"><span class="card-title">What is an Algo?</span></div>
+      <div style="padding:12px;font-size:13px;color:var(--t2);line-height:1.6">
+        <p style="margin:0 0 10px">An algo here is more than a signal trigger. When a setup fires, the algorithm uses its underlying model — either an ASTA rule-set or the DDQN neural network — to <strong>compute three values: entry price, stop-loss, and target</strong>. These are derived from the instrument's current state and the model's confidence in the trade, not from fixed rules.</p>
+        <p style="margin:0">An algo marked Live participates in RITA's signal pipeline. One that is Paused or unregistered is excluded from all feeds and backtests. The registry here is the single place to manage which strategies are armed at any time.</p>
       </div>
     </div>
     <div class="card">
-      <div class="card-hdr"><span class="card-title">Technical</span></div>
-      <div style="padding:12px;font-size:13px;color:var(--t2)">
-        <div style="margin-bottom:8px"><strong>Data sources</strong></div>
-        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
-          <div><code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px">asta_labeled_dataset.csv</code> — historical ASTA setups with outcomes, used for ASTA algo KPI computation</div>
-          <div><code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px">backtest_runs</code> — DDQN simulation logs, equity curves, and trade-level records stored per algo</div>
-        </div>
-        <div style="margin-bottom:6px"><strong>KPI computation</strong> — Win Rate, Profit Factor, and drawdown from resolved trade records; confidence from model signal scores</div>
-        <div><strong>Tier architecture</strong> — Experience Layer (<code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px">/api/experience</code>) aggregates data from System CRUD and backtest services, returning pre-shaped KPI + chart payloads</div>
+      <div class="card-hdr"><span class="card-title">Pipeline</span></div>
+      <div style="padding:12px;font-size:13px;color:var(--t2);line-height:1.6">
+        <p style="margin:0 0 10px">When a market event arrives, the <strong>classifier layer</strong> identifies the setup type and routes it to the matching algo. The algo engine then queries the instrument's live state, runs the model (rule-based for ASTA, inference for DDQN), and emits entry, SL, and target — which are written to the signal store.</p>
+        <p style="margin:0">The performance panel below reads from that signal store. The <strong>equity curve</strong> shows cumulative realised points across resolved trades. The <strong>entry / exit chart</strong> overlays each BUY and SELL signal at its entry price on the actual price series. The <strong>KPI tiles</strong> summarise aggregate statistics across all resolved trades for the full history, independent of the year filter.</p>
       </div>
     </div>
   </div>
@@ -787,58 +770,55 @@ tr:hover td{background:var(--surface2);}
       <button class="btn btn-sm btn-build" id="algo-year-2026" onclick="algoSetYear(2026)">2026</button>
     </div>
 
-    <!-- 60% charts (stacked) + 40% KPIs (3+3+2+2 rows) -->
-    <div style="display:grid;grid-template-columns:60% 40%;padding:16px 16px 8px;gap:16px">
-      <!-- Charts: stacked vertically -->
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="chart-wrap">
-          <div class="chart-title">Equity Curve <span style="font-weight:400;color:var(--t3);font-size:11px">— cumulative pts over resolved trades</span></div>
-          <div class="chart-box" style="height:200px"><canvas id="algo-chart-equity"></canvas></div>
-        </div>
-        <div class="chart-wrap">
-          <div class="chart-title">Signal Markers <span style="font-weight:400;color:var(--t3);font-size:11px">— ▲ BUY · ▼ SELL</span></div>
-          <div class="chart-box" style="height:200px"><canvas id="algo-chart-signals"></canvas></div>
-        </div>
+    <!-- 3-panel row: equity chart | entry/exit chart | KPI tiles -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:16px 16px 8px;gap:16px">
+      <div class="chart-wrap">
+        <div class="chart-title">Equity Curve <span style="font-weight:400;color:var(--t3);font-size:11px">— cumulative pts</span></div>
+        <div class="chart-box" style="height:260px"><canvas id="algo-chart-equity"></canvas></div>
       </div>
-      <!-- KPIs: 3+3+2+2 layout using 6-col subgrid -->
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-content:start">
-        <div class="kpi kpi-sm" style="grid-column:span 2">
+      <div class="chart-wrap">
+        <div class="chart-title">Entry / Exit <span style="font-weight:400;color:var(--t3);font-size:11px">— ▲ BUY · ▼ SELL on price</span></div>
+        <div class="chart-box" style="height:260px"><canvas id="algo-chart-signals"></canvas></div>
+      </div>
+      <!-- KPI tiles: 2-col × 5-row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Win Rate</div>
           <div class="kpi-val" id="algo-kpi-win-rate">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 2">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Total Pts</div>
           <div class="kpi-val" id="algo-kpi-total-pts">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 2">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Profit Factor</div>
           <div class="kpi-val" id="algo-kpi-profit-factor">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 2">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Signal Rate</div>
           <div class="kpi-val" id="algo-kpi-signal-rate">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 2">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Avg Confidence</div>
           <div class="kpi-val" id="algo-kpi-avg-confidence">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 2">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Max Drawdown</div>
           <div class="kpi-val" id="algo-kpi-max-drawdown">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 3">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Avg Win</div>
           <div class="kpi-val" id="algo-kpi-avg-win">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 3">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Avg Loss</div>
           <div class="kpi-val" id="algo-kpi-avg-loss">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 3">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Max Consec Wins</div>
           <div class="kpi-val" id="algo-kpi-max-consec-wins">—</div>
         </div>
-        <div class="kpi kpi-sm" style="grid-column:span 3">
+        <div class="kpi kpi-sm">
           <div class="kpi-label">Max Consec Losses</div>
           <div class="kpi-val" id="algo-kpi-max-consec-losses">—</div>
         </div>
