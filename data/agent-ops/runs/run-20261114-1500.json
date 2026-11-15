@@ -1,0 +1,56 @@
+{
+  "run_id": "20261114-1500",
+  "timestamp": "2026-11-14T15:00:00Z",
+  "feature": "Prod deploy v2.0.3 + v2.0.4 — F44 Jarvis Agent Panel HITL + region view layout; Confluence Engineering v81→v83",
+  "app": "ops",
+  "track": "deploy",
+  "skill_file": "n/a",
+  "feature_folder": "n/a",
+  "overall_status": "pass",
+  "commits": {
+    "aug_release": ["28c00de", "d500dd2", "2d2b364", "de2b706"],
+    "agentic_firm": ["95dcdf6", "ef5b147"]
+  },
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 7,
+      "steps_completed": 7,
+      "adherence_score": 1.0,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "7-phase prod deploy: pre-flight clean, PAT 200, 0-behind prod/master. Version bumped 2.0.3→2.0.4. Push de2b706 fast-forward. GitHub Actions green; health ok v2.0.4. Confluence: 3 pending sections resolved (F28 DS build status endpoint v81, v2.0.3 HITL v82, v2.0.4 Jarvis region view v83)."
+    }
+  ],
+  "token_summary": {
+    "total_subagent_tokens": 0
+  },
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": ""
+  },
+  "deliverables": {
+    "new_files": [
+      "project-office/confluence/_update_engineering_feature28_ds_build_status.py",
+      "project-office/confluence/_update_engineering_feature44_agent_panel_hitl.py",
+      "project-office/confluence/_update_engineering_feature44_region_view_v204.py"
+    ],
+    "modified_files": [
+      "riia-aug-release/VERSION",
+      "riia-aug-release/pyproject.toml",
+      "project-office/ops-deployments/DEPLOYMENT_KNOWLEDGE.md"
+    ]
+  }
+}

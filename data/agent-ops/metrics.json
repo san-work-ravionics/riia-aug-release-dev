@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-11-13T09:22:08",
-  "total_runs": 37,
+  "generated_at": "2026-11-15T07:22:00",
+  "total_runs": 40,
   "status_counts": {
-    "pass_with_warnings": 17,
-    "pass": 20
+    "pass_with_warnings": 18,
+    "pass": 22
   },
   "app_counts": {
     "rl": 2,
-    "rita": 13,
-    "ops": 2,
+    "rita": 14,
+    "ops": 3,
     "fno": 16,
     "core": 3,
-    "ds": 1
+    "ds": 2
   },
   "total_estimated_tokens": 9793400,
   "total_actual_tokens": 11692308,
   "total_duration_minutes": 4372,
-  "avg_duration_minutes": 118.2,
+  "avg_duration_minutes": 112.1,
   "per_agent": {
     "pm": {
-      "runs": 24,
+      "runs": 25,
       "avg_adherence": 1.0,
       "total_estimated_tokens": 775000,
       "total_actual_tokens": 593390,
@@ -27,18 +27,19 @@
       "top_failure_modes": {}
     },
     "architect": {
-      "runs": 25,
+      "runs": 26,
       "avg_adherence": 0.992,
       "total_estimated_tokens": 740000,
       "total_actual_tokens": 817478,
       "token_overrun_ratio": 1.1,
       "top_failure_modes": {
         "design 1 rule-based (rejected by user: 'Its a model based approach not a rule based approach')": 1,
-        "paths-correction-needed-riia-jun-to-aug": 1
+        "paths-correction-needed-riia-jun-to-aug": 1,
+        "data_source_assumption_incorrect_corrected_by_orchestrator": 1
       }
     },
     "design_reviewer": {
-      "runs": 24,
+      "runs": 25,
       "avg_adherence": 1.0,
       "total_estimated_tokens": 654000,
       "total_actual_tokens": 635999,
@@ -49,8 +50,8 @@
       }
     },
     "engineer": {
-      "runs": 34,
-      "avg_adherence": 0.972,
+      "runs": 37,
+      "avg_adherence": 0.974,
       "total_estimated_tokens": 3538200,
       "total_actual_tokens": 2519706,
       "token_overrun_ratio": 0.71,
@@ -63,7 +64,7 @@
       }
     },
     "code_reviewer": {
-      "runs": 22,
+      "runs": 23,
       "avg_adherence": 0.989,
       "total_estimated_tokens": 1346000,
       "total_actual_tokens": 1455783,
@@ -73,8 +74,8 @@
       }
     },
     "qa": {
-      "runs": 22,
-      "avg_adherence": 0.966,
+      "runs": 24,
+      "avg_adherence": 0.967,
       "total_estimated_tokens": 1600000,
       "total_actual_tokens": 1955076,
       "token_overrun_ratio": 1.22,
@@ -84,7 +85,7 @@
       }
     },
     "techwriter": {
-      "runs": 22,
+      "runs": 23,
       "avg_adherence": 0.865,
       "total_estimated_tokens": 1125000,
       "total_actual_tokens": 1109921,

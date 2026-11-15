@@ -1,0 +1,138 @@
+{
+  "run_id": "20261113-0930",
+  "timestamp": "2026-11-13T08:52:44Z",
+  "feature": "F28 Phase 2 — DS instrument build status: per-instrument metrics panel with row-click preview",
+  "app": "ds",
+  "track": "ui",
+  "task_brief": "project-office/task-briefs/task-brief-20261113-0930.md",
+  "feature_folder": "project-office/features/May/28 ds-instrument-model-build-status/",
+  "overall_status": "pass_with_warnings",
+  "commits": {
+    "aug_release": ["5085782", "a68eb82", "ccae162"],
+    "agentic_firm": ["831be12"]
+  },
+  "agents": [
+    {
+      "role": "pm",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "actual_tokens": null,
+      "grounding_checks": {
+        "plan_status_read": true,
+        "sprint_fit_confirmed": true,
+        "risk_flags_assessed": true,
+        "approved": true
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "architect",
+      "status": "pass",
+      "steps_required": 6,
+      "steps_completed": 6,
+      "adherence_score": 1.0,
+      "actual_tokens": 51572,
+      "tool_uses": 37,
+      "notes": "BacktestRunsRepository assumption was incorrect (data lives in training_runs); orchestrator corrected before Engineer spawn. All 5 design check gates passed.",
+      "failure_modes": ["data_source_assumption_incorrect_corrected_by_orchestrator"]
+    },
+    {
+      "role": "design_reviewer",
+      "status": "pass",
+      "steps_required": 5,
+      "steps_completed": 5,
+      "adherence_score": 1.0,
+      "actual_tokens": 41497,
+      "tool_uses": 5,
+      "findings": {
+        "blocking": 0,
+        "advisory": 3,
+        "advisories": ["A1: HTTP method not declared", "A2: BacktestRunsRepository not in files-to-touch (voided by orchestrator)", "A3: loadDashboard must call _renderPreviewPanel on initial load"]
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 7,
+      "steps_completed": 7,
+      "adherence_score": 1.0,
+      "actual_tokens": 79457,
+      "tool_uses": 51,
+      "dod_gates": {
+        "colspan_7": "pass",
+        "state_isolation": "pass",
+        "dsPreviewRow_wired": "pass",
+        "ruff": "pass"
+      },
+      "notes": "Advisory A2 void (no BacktestRunsRepository needed). Advisory A3 addressed. Implementation log section blank — filled by orchestrator post-review.",
+      "failure_modes": ["implementation_log_section_blank"]
+    },
+    {
+      "role": "code_reviewer",
+      "status": "conditional",
+      "steps_required": 6,
+      "steps_completed": 6,
+      "adherence_score": 1.0,
+      "actual_tokens": 78405,
+      "tool_uses": 13,
+      "findings": {
+        "blocking": 0,
+        "advisory": 5,
+        "advisories": [
+          "B1: last_run_round type Optional[str] vs design Optional[int] (intentional — run_id is UUID string)",
+          "B2: sharpe threshold 1.0 vs design 0.5 (intentional — consistent with existing code)",
+          "B3: EC-4 fallback not implemented (acceptable edge case)",
+          "B4: early-return in _renderPreviewPanel did not clear dash-constraints/dash-goal (FIXED: ccae162)",
+          "B5: Engineer Implementation Log section blank (filled by orchestrator)"
+        ]
+      },
+      "failure_modes": []
+    },
+    {
+      "role": "qa",
+      "status": "pass",
+      "steps_required": 3,
+      "steps_completed": 3,
+      "adherence_score": 1.0,
+      "actual_tokens": 49908,
+      "tool_uses": 13,
+      "tests": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "file": "tests/unit/test_f28_p2_instrument_metrics.py",
+        "commit": "a68eb82"
+      },
+      "failure_modes": []
+    }
+  ],
+  "token_summary": {
+    "architect": 51572,
+    "design_reviewer": 41497,
+    "engineer": 79457,
+    "code_reviewer": 78405,
+    "qa": 49908,
+    "total_subagent_tokens": 300839
+  },
+  "warnings": [
+    "Architect design assumed BacktestRunsRepository for metric data — corrected by orchestrator DB inspection before Engineer spawn",
+    "Code review advisory B4 (stale panels on null instrument) fixed inline as separate commit ccae162"
+  ],
+  "deliverables": {
+    "new_files": [
+      "riia-aug-release/tests/unit/test_f28_p2_instrument_metrics.py"
+    ],
+    "modified_files": [
+      "riia-aug-release/src/rita/schemas/ds_instrument_status.py",
+      "riia-aug-release/src/rita/api/experience/ds.py",
+      "riia-aug-release/dashboard/js/ds/dashboard.js",
+      "riia-aug-release/dashboard/js/ds/main.js",
+      "riia-aug-release/dashboard/ds.html",
+      "project-office/specs/Spec_JS_Code.md",
+      "project-office/specs/Spec_RITA_App.md"
+    ]
+  }
+}
