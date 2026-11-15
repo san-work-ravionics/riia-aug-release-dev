@@ -306,3 +306,63 @@ def test_contract_missing_display_fields_have_js_fallbacks():
 
 def test_contract_response_wires_greeks_list():
     assert "greeks" in _schema_fields("PortfolioAnalyticsResponse") or "greeks: list[GreekItemSchema]" in _SCHEMA.read_text(encoding="utf-8")
+
+
+# ── F44 P4d: empirical monthly move probabilities ──────────────────────────────
+
+def test_f44_p4d_schema_has_prob_fields():
+    fields = _schema_fields("PositionItemSchema")
+    assert "prob_exceed_1s" in fields
+    assert "prob_exceed_2s" in fields
+    assert "prob_exceed_3s" in fields
+
+
+def test_f44_p4d_monthly_exceedance_probs_enough_data():
+    import math
+    from datetime import date
+    from types import SimpleNamespace
+    from rita.api.experience.portfolio_analytics import _monthly_exceedance_probs
+
+    # 25 months of data: price grows ~1% per month
+    recs = []
+    year, month = 2024, 1
+    price = 100.0
+    for i in range(25):
+        m = month + i
+        y = year + (m - 1) // 12
+        m = ((m - 1) % 12) + 1
+        for day in [15, 28]:
+            recs.append(SimpleNamespace(date=date(y, m, day), close=price * (1 + 0.01 * i)))
+    by_inst = {"NIFTY": recs}
+    p1, p2, p3 = _monthly_exceedance_probs("NIFTY", by_inst)
+    assert p1 is not None
+    assert p2 is not None
+    assert p3 is not None
+    assert 0.0 <= p1 <= 100.0
+    assert p2 <= p1  # higher threshold → fewer exceedances
+    assert p3 <= p2
+
+
+def test_f44_p4d_monthly_exceedance_probs_insufficient_data():
+    from datetime import date
+    from types import SimpleNamespace
+    from rita.api.experience.portfolio_analytics import _monthly_exceedance_probs
+
+    # Only 6 months of data — below 12-month minimum
+    recs = [
+        SimpleNamespace(date=date(2026, m, 15), close=100.0 + m)
+        for m in range(1, 7)
+    ]
+    by_inst = {"NIFTY": recs}
+    p1, p2, p3 = _monthly_exceedance_probs("NIFTY", by_inst)
+    assert p1 is None
+    assert p2 is None
+    assert p3 is None
+
+
+def test_f44_p4d_stress_js_has_prob_columns():
+    stress = (_JS / "fno" / "stress.js").read_text(encoding="utf-8")
+    assert "P(1σ)" in stress or "P(1" in stress
+    assert "prob_exceed_1s" in stress
+    assert "probMap" in stress
+    assert 'colspan="12"' in stress

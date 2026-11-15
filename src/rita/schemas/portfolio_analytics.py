@@ -42,6 +42,9 @@ class PositionItemSchema(BaseModel):
     currency: str | None = None
     ann_vol_pct: float
     region: str | None = None
+    prob_exceed_1s: float | None = None
+    prob_exceed_2s: float | None = None
+    prob_exceed_3s: float | None = None
 
 
 class GreekItemSchema(BaseModel):

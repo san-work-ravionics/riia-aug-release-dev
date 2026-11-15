@@ -269,6 +269,47 @@ def _latest_close(inst_id: str, by_inst: dict) -> Optional[float]:
     return float(rec.close) if rec.close else None
 
 
+def _monthly_exceedance_probs(
+    inst_id: str, by_inst: dict
+) -> tuple[float | None, float | None, float | None]:
+    """Empirical probability (%) that a monthly move exceeds 1σ, 2σ, 3σ.
+
+    Groups daily closes by year-month, takes the last close per month,
+    computes month-over-month log returns, then counts exceedances.
+    Returns (None, None, None) when fewer than 12 months of data exist.
+    """
+    recs = sorted(by_inst.get(inst_id.upper(), []), key=lambda r: r.date)
+    if not recs:
+        return None, None, None
+
+    month_close: dict[tuple[int, int], float] = {}
+    for r in recs:
+        month_close[(r.date.year, r.date.month)] = float(r.close)
+
+    months = sorted(month_close)
+    if len(months) < 13:  # need at least 12 returns → 13 monthly closes
+        return None, None, None
+
+    closes = [month_close[m] for m in months]
+    returns = [
+        math.log(closes[i] / closes[i - 1])
+        for i in range(1, len(closes))
+        if closes[i - 1] > 0
+    ]
+    if len(returns) < 12:
+        return None, None, None
+
+    sigma = statistics.stdev(returns)
+    if sigma == 0:
+        return None, None, None
+
+    n = len(returns)
+    p1 = round(100.0 * sum(1 for r in returns if abs(r) > sigma) / n, 1)
+    p2 = round(100.0 * sum(1 for r in returns if abs(r) > 2 * sigma) / n, 1)
+    p3 = round(100.0 * sum(1 for r in returns if abs(r) > 3 * sigma) / n, 1)
+    return p1, p2, p3
+
+
 def _build_market_entry(inst_id: str, by_inst: dict) -> MarketEntrySchema:
     """Build a MarketEntrySchema from the two most-recent cache rows."""
     meta = _INSTRUMENT_META.get(inst_id.upper(), {})
@@ -666,6 +707,7 @@ def get_portfolio_analytics(
         mkt = market.get(inst)
         if mkt and mkt.chgFromPrev is not None:
             chg_pct = mkt.chgFromPrev
+        p1s, p2s, p3s = _monthly_exceedance_probs(inst, by_inst)
         positions.append(
             PositionItemSchema(
                 und=inst,
@@ -683,6 +725,9 @@ def get_portfolio_analytics(
                 currency=meta.get("currency", _DEFAULT_CURRENCY),
                 ann_vol_pct=vol_map.get(inst, _FALLBACK_VOL_PCT),
                 region=meta.get("region", _DEFAULT_REGION),
+                prob_exceed_1s=p1s,
+                prob_exceed_2s=p2s,
+                prob_exceed_3s=p3s,
             )
         )
 

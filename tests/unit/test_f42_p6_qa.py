@@ -1263,7 +1263,9 @@ def test_no_dom_id_was_lost_and_no_window_binding_dropped_since_baseline():
     if not old_html or "ta-an-detail-a" in old_html:
         pytest.skip("pre-P6 baseline unavailable")
     ids = lambda t: set(re.findall(r'\bid="([^"]+)"', t))    # noqa: E731
-    assert ids(old_html) <= ids(HTML), ids(old_html) - ids(HTML)
+    # ids intentionally removed after P6 (F44/F45 hedge-workflow-save redesign)
+    _known_removed = {"hw-save-impact-kpis"}
+    assert ids(old_html) - _known_removed <= ids(HTML), ids(old_html) - _known_removed - ids(HTML)
     win = lambda t: set(re.findall(r"window\.([A-Za-z0-9_]+)\s*=", t))      # noqa: E731
     assert win(old_main) <= win(MAIN_JS)
     # every id the JS touches exists in the page (setEl / getElementById)

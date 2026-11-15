@@ -124,6 +124,15 @@ export function renderStdDevTable() {
   const tdPos = (html, cls = '', extra = '') =>
     `<td class="${cls}" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--pos);${extra}">${html}</td>`;
 
+  // Build prob map: und → {p1, p2, p3} from positions
+  const probMap = {};
+  for (const p of positions) {
+    if (p.prob_exceed_1s != null) {
+      probMap[p.und] = { p1: p.prob_exceed_1s, p2: p.prob_exceed_2s, p3: p.prob_exceed_3s };
+    }
+  }
+  const fmtProb = (v) => v != null ? v.toFixed(1) + '%' : '—';
+
   const renderRow = (inst, isPortfolio) => {
     const isSelected = sel === inst.id || (!sel && isPortfolio);
     const mVol = inst.vol / Math.sqrt(12);
@@ -131,6 +140,11 @@ export function renderStdDevTable() {
     const selStyle = isSelected
       ? 'background:color-mix(in srgb,var(--p02) 12%,transparent);outline:1px solid color-mix(in srgb,var(--p02) 30%,transparent);'
       : '';
+    const probs = isPortfolio ? null : probMap[inst.id];
+    const probCells = `
+      <td style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--t2);border-left:1px solid var(--border)">${fmtProb(probs?.p1)}</td>
+      <td style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--t2)">${fmtProb(probs?.p2)}</td>
+      <td style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--t2)">${fmtProb(probs?.p3)}</td>`;
     return `<tr style="cursor:pointer;${selStyle}" data-inst="${_esc(inst.id)}" class="stddev-row">
       <td style="font-size:12px;font-weight:${isPortfolio ? '700' : '600'};${isPortfolio ? 'color:var(--p02)' : ''}">${_esc(inst.full)}</td>
       <td style="font-size:11px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${(inst.vol * 100).toFixed(1)}%</td>
@@ -141,6 +155,7 @@ export function renderStdDevTable() {
       ${tdPos(fmtMove(+m1, inst.sym, isPortfolio))}
       ${tdPos(fmtMove(+m2, inst.sym, isPortfolio))}
       ${tdPos(fmtMove(+m3, inst.sym, isPortfolio), 'rk-sd-x')}
+      ${probCells}
     </tr>`;
   };
 
@@ -158,26 +173,21 @@ export function renderStdDevTable() {
       <div class="tbl-wrap">
         <table class="rk-sd-tbl">
           <thead><tr>
-            <th rowspan="2">Instrument</th><th rowspan="2">Ann Vol</th>
+            <th>Instrument</th><th>Ann Vol</th>
             <th class="rk-sd-x" style="color:var(--neg)">−3σ</th>
             <th style="color:var(--neg)">−2σ</th>
             <th style="color:var(--neg)">−1σ</th>
-            <th rowspan="2" style="border-left:1px solid var(--border);border-right:1px solid var(--border)">Current</th>
+            <th style="border-left:1px solid var(--border);border-right:1px solid var(--border)">Current</th>
             <th style="color:var(--pos)">+1σ</th>
             <th style="color:var(--pos)">+2σ</th>
             <th class="rk-sd-x" style="color:var(--pos)">+3σ</th>
-          </tr>
-          <tr style="opacity:.65;font-size:10px;font-weight:normal">
-            <th class="rk-sd-x" style="color:var(--neg)">0.1%/mo</th>
-            <th style="color:var(--neg)">2.3%/mo</th>
-            <th style="color:var(--neg)">16%/mo</th>
-            <th style="color:var(--pos)">16%/mo</th>
-            <th style="color:var(--pos)">2.3%/mo</th>
-            <th class="rk-sd-x" style="color:var(--pos)">0.1%/mo</th>
+            <th style="border-left:1px solid var(--border);color:var(--t3)">P(1σ)</th>
+            <th style="color:var(--t3)">P(2σ)</th>
+            <th style="color:var(--t3)">P(3σ)</th>
           </tr></thead>
           <tbody>${allRows}</tbody>
           <tfoot><tr>
-            <td colspan="9" style="font-size:10px;color:var(--t4);font-family:'IBM Plex Mono',monospace">Monthly σ = Ann Vol ÷ √12 · absolute move from current price · % probability of exceeding that σ level in one direction per month</td>
+            <td colspan="12" style="font-size:10px;color:var(--t4);font-family:'IBM Plex Mono',monospace">Monthly σ = Ann Vol ÷ √12 · absolute move from current price · P(nσ) = empirical % of months where |move| exceeded nσ</td>
           </tr></tfoot>
         </table>
       </div>
