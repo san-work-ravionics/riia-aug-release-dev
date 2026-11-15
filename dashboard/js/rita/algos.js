@@ -304,10 +304,10 @@ export async function algoShowPerf(algo_id, algo_name) {
   _setEl('algos-perf-title', _esc(algo_name) + ' Performance');
 
   const kpiIds = [
-    'algo-kpi-win-rate', 'algo-kpi-total-pts', 'algo-kpi-profit-factor',
-    'algo-kpi-signal-rate', 'algo-kpi-avg-confidence',
-    'algo-kpi-avg-win', 'algo-kpi-avg-loss',
-    'algo-kpi-num-trades', 'algo-kpi-num-targets', 'algo-kpi-num-stops',
+    'algo-kpi-num-trades', 'algo-kpi-signal-rate', 'algo-kpi-profit-factor',
+    'algo-kpi-total-pts', 'algo-kpi-num-targets', 'algo-kpi-num-stops',
+    'algo-kpi-avg-loss', 'algo-kpi-avg-win',
+    'algo-kpi-avg-confidence', 'algo-kpi-win-rate',
   ];
   kpiIds.forEach(id => _setVal(id, '…'));
   _setEl('algos-recent-tbody', '<tr><td colspan="5">Loading…</td></tr>');
