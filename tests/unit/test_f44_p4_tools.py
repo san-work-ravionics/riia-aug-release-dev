@@ -168,4 +168,4 @@ def test_no_network_on_any_p4_tool(tool_db, fake_models, no_asta, monkeypatch):
 def test_health_reports_registered_tools_and_jarvis(client):
     body = client.get("/health").json()
     assert body["mcp"] == {"tools_registered": 23, "auth": "on", "transports": ["http", "memory"]}
-    assert body["jarvis"]["intents"] == 16 and body["jarvis"]["chat_model"] in ("ready", "not_loaded")
+    assert body["jarvis"]["intents"] == 17 and body["jarvis"]["chat_model"] in ("ready", "not_loaded")

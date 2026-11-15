@@ -16,9 +16,9 @@ from pathlib import Path
 import pytest
 
 _ROOT = Path(__file__).resolve().parents[2]
-_PRIOR = "20261026_f44p2_user_portfolio_currency"
-_HEAD = "20261027_f44p4_jarvis_tables"
-_TABLES = {"user_journeys", "jarvis_sessions", "jarvis_messages"}
+_PRIOR = "20261027_f44p4_jarvis_tables"
+_HEAD = "20261115_add_algo_registry"
+_TABLES = {"algo_registry"}
 _P4_COLS = {"reselect_year", "back_to_plan_reason", "proposal", "version", "previous_journey_id",
             "plan_year_start", "segments", "tracking", "reselections"}
 

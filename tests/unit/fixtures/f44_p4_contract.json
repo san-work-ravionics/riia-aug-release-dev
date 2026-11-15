@@ -346,6 +346,19 @@
       "fno_link": "/dashboard/fno.html"
      },
      "kind": "hedge_signal"
+    },
+    {
+     "data": [
+      {
+       "algo_id": "a-1",
+       "instrument": "NIFTY",
+       "name": "Triple Screen",
+       "signal_rate": 50.0,
+       "total_pts": 10.5,
+       "win_rate": 60.0
+      }
+     ],
+     "kind": "algo"
     }
    ],
    "chips": [
@@ -657,6 +670,7 @@
    "updated_at": "2026-10-27T09:00:00Z",
    "version": 4
   },
+  "live_algos": [],
   "live_holdings": [
    {
     "as_of": "2026-10-23",
@@ -1386,6 +1400,19 @@
   ]
  },
  "cards": {
+  "algo": {
+   "data": [
+    {
+     "algo_id": "a-1",
+     "instrument": "NIFTY",
+     "name": "Triple Screen",
+     "signal_rate": 50.0,
+     "total_pts": 10.5,
+     "win_rate": 60.0
+    }
+   ],
+   "kind": "algo"
+  },
   "bucket_progress": {
    "data": {
     "buckets": [

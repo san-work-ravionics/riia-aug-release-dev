@@ -47,6 +47,9 @@ def cards() -> dict[str, dict]:
             "instruments": ["E1", "E2"]}},
         "hedge_signal": {"kind": "hedge_signal", "data": {
             "at_risk_buckets": ["eq"], "all_on_track": False, "fno_link": "/dashboard/fno.html"}},
+        "algo": {"kind": "algo", "data": [
+            {"algo_id": "a-1", "name": "Triple Screen", "instrument": "NIFTY",
+             "total_pts": 10.5, "win_rate": 60.0, "signal_rate": 50.0}]},
     }
 
 
