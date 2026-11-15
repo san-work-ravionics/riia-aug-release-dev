@@ -181,8 +181,9 @@ let _currentYear = 2026;
 function _renderPerfCharts(year) {
   if (!_perfData) return;
   const yStr = String(year);
+  const _filt = year === 'all' ? () => true : r => r.date.startsWith(yStr);
 
-  const eq = (_perfData.equity_curve || []).filter(r => r.date.startsWith(yStr));
+  const eq = (_perfData.equity_curve || []).filter(_filt);
   if (eq.length > 0) {
     mkChart('algo-chart-equity', {
       type: 'line',
@@ -207,7 +208,7 @@ function _renderPerfCharts(year) {
     destroyChart('algo-chart-equity');
   }
 
-  const sm = (_perfData.signal_markers || []).filter(r => r.date.startsWith(yStr));
+  const sm = (_perfData.signal_markers || []).filter(_filt);
   if (sm.length > 0) {
     const smLabels = sm.map(r => r.date);
     const smCloses = sm.map(r => r.close);
@@ -262,7 +263,7 @@ function _renderPerfCharts(year) {
     destroyChart('algo-chart-signals');
   }
 
-  const recent = (_perfData.recent_signals || []).filter(r => r.date.startsWith(yStr));
+  const recent = (_perfData.recent_signals || []).filter(_filt);
   if (recent.length === 0) {
     _setEl('algos-recent-tbody', `<tr><td colspan="5" class="empty-row">No signals for ${_esc(yStr)}</td></tr>`);
   } else {
@@ -280,7 +281,7 @@ function _renderPerfCharts(year) {
 
 export function algoSetYear(year) {
   _currentYear = year;
-  [2022, 2023, 2024, 2025, 2026].forEach(y => {
+  ['all', 2022, 2023, 2024, 2025, 2026].forEach(y => {
     const btn = document.getElementById(`algo-year-${y}`);
     if (!btn) return;
     if (y === year) {
@@ -306,11 +307,15 @@ export async function algoShowPerf(algo_id, algo_name) {
   ];
   kpiIds.forEach(id => _setVal(id, '…'));
   _setEl('algos-recent-tbody', '<tr><td colspan="5">Loading…</td></tr>');
-  algoSetYear(2026);
 
   try {
     const data = await api(`/api/v1/experience/rita/algo-performance?algo_id=${encodeURIComponent(algo_id)}`);
     _perfData = data;
+    // Auto-select most recent populated year; fall back to 'all'
+    const has2026 = (data.equity_curve || []).some(r => r.date.startsWith('2026')) ||
+                    (data.recent_signals || []).some(r => r.date.startsWith('2026'));
+    const defaultYear = has2026 ? 2026 : 'all';
+    algoSetYear(defaultYear);
     const k = data.kpis || {};
 
     function _kv(id, val, unit, decimals) {
