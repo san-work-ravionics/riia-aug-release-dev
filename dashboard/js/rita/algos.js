@@ -312,6 +312,8 @@ export async function loadAlgos() {
   if (typeEl) typeEl.addEventListener('change', _algoTypeChanged);
   const nameEl = document.getElementById('algos-register-name');
   if (nameEl) nameEl.addEventListener('input', _algoTypeChanged);
+  const setupEl = document.getElementById('algos-register-setup');
+  if (setupEl) setupEl.addEventListener('change', _algoTypeChanged);
 
   _algoTypeChanged();
 }
