@@ -64,14 +64,14 @@ function _renderRegistry(algos) {
       <td>${_typeBadge(a.algo_type)}</td>
       <td>${_esc(a.instrument)}${a.setup_key ? ' <span class="algo-setup-key">(' + _esc(_SETUP_LABELS[a.setup_key] || a.setup_key) + ')</span>' : ''}</td>
       <td>${_statusBadge(a.status)}</td>
-      <td class="algo-actions">
+      <td class="algo-actions" style="white-space:nowrap">
         ${a.status !== 'live'
-          ? `<button class="btn btn-sm btn-build" onclick="algoSetLive('${_esc(a.algo_id)}')">Go Live</button>`
-          : `<button class="btn btn-sm btn-ghost" onclick="algoPause('${_esc(a.algo_id)}')">Pause</button>`}
-        <button class="btn btn-sm btn-ghost" onclick="algoShowPerf('${_esc(a.algo_id)}', '${_esc(a.name)}')">Perf</button>
-        <button class="btn btn-sm btn-danger-ghost" onclick="algoDelete('${_esc(a.algo_id)}')">Delete</button>
+          ? `<button class="btn btn-xs btn-build" title="Go Live" onclick="algoSetLive('${_esc(a.algo_id)}')">▶</button>`
+          : `<button class="btn btn-xs btn-ghost" title="Pause" onclick="algoPause('${_esc(a.algo_id)}')">⏸</button>`}
+        <button class="btn btn-xs btn-ghost" title="Performance" onclick="algoShowPerf('${_esc(a.algo_id)}', '${_esc(a.name)}')">↗</button>
+        <button class="btn btn-xs btn-ghost" title="Delete" style="color:var(--danger)" onclick="algoDelete('${_esc(a.algo_id)}')">🗑</button>
         ${a.status === 'live'
-          ? `<button class="btn btn-sm btn-build" onclick="algoCheckNow('${_esc(a.algo_id)}', '${_esc(a.name)}')">Check Now</button>`
+          ? `<button class="btn btn-xs btn-build" title="Check Now" onclick="algoCheckNow('${_esc(a.algo_id)}', '${_esc(a.name)}')">⚡</button>`
           : ''}
       </td>
     </tr>`).join('');
