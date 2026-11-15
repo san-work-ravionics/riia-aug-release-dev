@@ -70,6 +70,9 @@ function _renderRegistry(algos) {
           : `<button class="btn btn-sm btn-ghost" onclick="algoPause('${_esc(a.algo_id)}')">Pause</button>`}
         <button class="btn btn-sm btn-ghost" onclick="algoShowPerf('${_esc(a.algo_id)}', '${_esc(a.name)}')">Perf</button>
         <button class="btn btn-sm btn-danger-ghost" onclick="algoDelete('${_esc(a.algo_id)}')">Delete</button>
+        ${a.status === 'live'
+          ? `<button class="btn btn-sm btn-build" onclick="algoCheckNow('${_esc(a.algo_id)}', '${_esc(a.name)}')">Check Now</button>`
+          : ''}
       </td>
     </tr>`).join('');
 
@@ -350,6 +353,48 @@ export async function algoShowPerf(algo_id, algo_name) {
     kpiIds.forEach(id => _setVal(id, '—'));
     _setEl('algos-recent-tbody', `<tr><td colspan="5" class="empty-row">Error: ${_esc(e.message)}</td></tr>`);
   }
+}
+
+// ── D. Check Now (F48) ────────────────────────────────────────────────────────
+
+export async function algoCheckNow(algo_id, algo_name) {
+  const panel = document.getElementById('algos-signal-panel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  _setVal('algos-sig-title', (algo_name || 'Signal') + ' — Check Now');
+
+  const fields = ['algos-sig-name','algos-sig-instrument','algos-sig-type',
+    'algos-sig-signal','algos-sig-target','algos-sig-stop-loss','algos-sig-confidence',
+    'algos-sig-action','algos-sig-allocation','algos-sig-ltp','algos-sig-close',
+    'algos-sig-as-of','algos-sig-message'];
+  fields.forEach(id => _setVal(id, '…'));
+  _setEl('algos-sig-error', '');
+
+  try {
+    const d = await api(`/api/v1/experience/rita/algos/${encodeURIComponent(algo_id)}/signal`);
+    const na = v => (v != null && v !== '') ? String(v) : '—';
+    _setVal('algos-sig-name',       na(d.name));
+    _setVal('algos-sig-instrument', na(d.instrument));
+    _setVal('algos-sig-type',       na(d.algo_type));
+    _setVal('algos-sig-signal',     na(d.signal));
+    _setVal('algos-sig-target',     na(d.target));
+    _setVal('algos-sig-stop-loss',  na(d.stop_loss));
+    _setVal('algos-sig-confidence', d.confidence != null ? (d.confidence * 100).toFixed(1) + '%' : '—');
+    _setVal('algos-sig-action',     na(d.action));
+    _setVal('algos-sig-allocation', d.allocation_pct != null ? d.allocation_pct + '%' : '—');
+    _setVal('algos-sig-ltp',        na(d.kite_ltp));
+    _setVal('algos-sig-close',      na(d.close));
+    _setVal('algos-sig-as-of',      na(d.as_of));
+    _setVal('algos-sig-message',    na(d.message));
+  } catch (e) {
+    fields.forEach(id => _setVal(id, '—'));
+    _setEl('algos-sig-error', `<span style="color:var(--danger)">Error: ${_esc(e.message)}</span>`);
+  }
+}
+
+export function algoCloseSignal() {
+  const panel = document.getElementById('algos-signal-panel');
+  if (panel) panel.style.display = 'none';
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────

@@ -32,7 +32,7 @@ import { loadMyPortfolio, savePortfolio } from './my-portfolio.js';
 import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline, loadRLScorecards } from './agent-performance.js';
 import { loadModelEval, meSelectInstrument, meSelectRow, meSortTable } from './model-eval.js';
 import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=6';
-import { loadAlgos, algoRegisterToggle, algoSubmitRegister, algoSetLive, algoPause, algoDelete, algoShowPerf } from './algos.js';
+import { loadAlgos, algoRegisterToggle, algoSubmitRegister, algoSetLive, algoPause, algoDelete, algoShowPerf, algoCheckNow, algoCloseSignal } from './algos.js';
 import { loadAlgoPerformance } from './algo-performance.js';
 
 // ── Populate section loaders map ───────────────────────────
@@ -118,6 +118,8 @@ window.algoSetLive        = algoSetLive;
 window.algoPause          = algoPause;
 window.algoDelete         = algoDelete;
 window.algoShowPerf       = algoShowPerf;
+window.algoCheckNow       = algoCheckNow;
+window.algoCloseSignal    = algoCloseSignal;
 window.pbToggleInstrument   = pbToggleInstrument;
 window.pbSelectAllRegion    = pbSelectAllRegion;
 window.pbClearAllRegion     = pbClearAllRegion;

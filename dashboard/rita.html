@@ -856,6 +856,30 @@ tr:hover td{background:var(--surface2);}
       </div>
     </div>
   </div>
+
+  <!-- Signal Panel — Check Now (F48, hidden until triggered) -->
+  <div id="algos-signal-panel" class="card" style="display:none;margin-top:12px">
+    <div class="card-hdr">
+      <span id="algos-sig-title" class="card-title">Signal Check</span>
+      <div class="hdr-actions">
+        <button class="btn btn-ghost btn-sm" onclick="algoCloseSignal()">✕ Close</button>
+      </div>
+    </div>
+    <div id="algos-sig-error" style="padding:8px 16px;font-size:12px"></div>
+    <div style="padding:12px 16px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tbody>
+          <tr><td style="padding:4px 0;color:var(--t3);font-size:11px;width:140px">Name</td><td id="algos-sig-name" style="padding:4px 0;font-weight:600"></td><td style="padding:4px 12px;color:var(--t3);font-size:11px;width:120px">Signal</td><td id="algos-sig-signal" style="padding:4px 0;font-weight:700"></td></tr>
+          <tr><td style="padding:4px 0;color:var(--t3);font-size:11px">Instrument</td><td id="algos-sig-instrument" style="padding:4px 0"></td><td style="padding:4px 12px;color:var(--t3);font-size:11px">Target</td><td id="algos-sig-target" style="padding:4px 0"></td></tr>
+          <tr><td style="padding:4px 0;color:var(--t3);font-size:11px">Type</td><td id="algos-sig-type" style="padding:4px 0"></td><td style="padding:4px 12px;color:var(--t3);font-size:11px">Stop Loss</td><td id="algos-sig-stop-loss" style="padding:4px 0"></td></tr>
+          <tr><td style="padding:4px 0;color:var(--t3);font-size:11px">Action</td><td id="algos-sig-action" style="padding:4px 0;font-weight:600"></td><td style="padding:4px 12px;color:var(--t3);font-size:11px">Confidence</td><td id="algos-sig-confidence" style="padding:4px 0"></td></tr>
+          <tr><td style="padding:4px 0;color:var(--t3);font-size:11px">Allocation</td><td id="algos-sig-allocation" style="padding:4px 0"></td><td style="padding:4px 12px;color:var(--t3);font-size:11px">Live LTP</td><td id="algos-sig-ltp" style="padding:4px 0"></td></tr>
+          <tr><td style="padding:4px 0;color:var(--t3);font-size:11px">As of</td><td id="algos-sig-as-of" style="padding:4px 0"></td><td style="padding:4px 12px;color:var(--t3);font-size:11px">Last Close</td><td id="algos-sig-close" style="padding:4px 0"></td></tr>
+          <tr><td style="padding:4px 0;color:var(--t3);font-size:11px;vertical-align:top">Message</td><td id="algos-sig-message" colspan="3" style="padding:4px 0;font-style:italic;color:var(--t2)"></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </section>
 
 
