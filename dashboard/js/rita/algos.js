@@ -206,6 +206,8 @@ function _renderPerfCharts(year) {
     });
   } else {
     destroyChart('algo-chart-equity');
+    const _ec = document.getElementById('algo-chart-equity');
+    if (_ec) _ec.width = _ec.width; // force-clear stale drawing
   }
 
   const sm = (_perfData.signal_markers || []).filter(_filt);
@@ -261,6 +263,8 @@ function _renderPerfCharts(year) {
     });
   } else {
     destroyChart('algo-chart-signals');
+    const _sc = document.getElementById('algo-chart-signals');
+    if (_sc) _sc.width = _sc.width; // force-clear stale drawing
   }
 
   const recent = (_perfData.recent_signals || []).filter(_filt);
@@ -301,9 +305,9 @@ export async function algoShowPerf(algo_id, algo_name) {
 
   const kpiIds = [
     'algo-kpi-win-rate', 'algo-kpi-total-pts', 'algo-kpi-profit-factor',
-    'algo-kpi-signal-rate', 'algo-kpi-avg-confidence', 'algo-kpi-max-drawdown',
-    'algo-kpi-avg-win', 'algo-kpi-avg-loss', 'algo-kpi-max-consec-wins',
-    'algo-kpi-max-consec-losses',
+    'algo-kpi-signal-rate', 'algo-kpi-avg-confidence',
+    'algo-kpi-avg-win', 'algo-kpi-avg-loss',
+    'algo-kpi-num-trades', 'algo-kpi-num-targets', 'algo-kpi-num-stops',
   ];
   kpiIds.forEach(id => _setVal(id, '…'));
   _setEl('algos-recent-tbody', '<tr><td colspan="5">Loading…</td></tr>');
@@ -335,11 +339,11 @@ export async function algoShowPerf(algo_id, algo_name) {
     _kv('algo-kpi-profit-factor', k.profit_factor, '', 2);
     _kv('algo-kpi-signal-rate', k.signal_rate, '%', 1);
     _kv('algo-kpi-avg-confidence', k.avg_confidence !== undefined ? (k.avg_confidence !== null ? k.avg_confidence * 100 : null) : null, '%', 1);
-    _kv('algo-kpi-max-drawdown', k.max_drawdown, ' pts', 1);
     _kv('algo-kpi-avg-win', k.avg_win, ' pts', 1);
     _kv('algo-kpi-avg-loss', k.avg_loss, ' pts', 1);
-    _kv('algo-kpi-max-consec-wins', k.max_consec_wins, '', 0);
-    _kv('algo-kpi-max-consec-losses', k.max_consec_losses, '', 0);
+    _kv('algo-kpi-num-trades', k.num_trades, '', 0);
+    _kv('algo-kpi-num-targets', k.num_targets, '', 0);
+    _kv('algo-kpi-num-stops', k.num_stops, '', 0);
 
     _renderPerfCharts(_currentYear);
   } catch (e) {

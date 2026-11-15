@@ -2585,7 +2585,6 @@ def algo_performance(
     Experience tier — read-only, no DB writes, no db.commit().
     """
     import math
-    import numpy as np
     import pandas as pd
     from pathlib import Path
     from fastapi import HTTPException
@@ -2696,44 +2695,17 @@ def algo_performance(
         avg_win = float(target_hit["_pts"].mean()) if len(target_hit) > 0 else None
         avg_loss = float(stopped_out["_pts"].mean()) if len(stopped_out) > 0 else None
 
-        # Max drawdown (peak-to-trough of running cumulative pts)
-        max_drawdown: float | None = None
-        if len(resolved) > 0:
-            cum_pts = resolved["_pts"].cumsum().values
-            peak = np.maximum.accumulate(cum_pts)
-            drawdown = cum_pts - peak
-            max_drawdown = float(drawdown.min())
-
-        # Max consecutive wins / losses
-        max_consec_wins: float | None = None
-        max_consec_losses: float | None = None
-        if len(resolved) > 0:
-            outcomes_seq = resolved["_outcome"].tolist()
-            best_w = cur_w = 0
-            best_l = cur_l = 0
-            for o in outcomes_seq:
-                if o == "target":
-                    cur_w += 1
-                    cur_l = 0
-                    best_w = max(best_w, cur_w)
-                else:
-                    cur_l += 1
-                    cur_w = 0
-                    best_l = max(best_l, cur_l)
-            max_consec_wins = float(best_w)
-            max_consec_losses = float(best_l)
-
         kpis = AlgoKpisOut(
             win_rate=round(win_rate, 2) if win_rate is not None else None,
             total_pts=round(total_pts, 2) if total_pts is not None else None,
             profit_factor=round(profit_factor, 3) if profit_factor is not None else None,
             signal_rate=round(signal_rate, 2) if signal_rate is not None else None,
             avg_confidence=round(avg_confidence, 4) if avg_confidence is not None else None,
-            max_drawdown=round(max_drawdown, 2) if max_drawdown is not None else None,
             avg_win=round(avg_win, 2) if avg_win is not None else None,
             avg_loss=round(avg_loss, 2) if avg_loss is not None else None,
-            max_consec_wins=max_consec_wins,
-            max_consec_losses=max_consec_losses,
+            num_trades=len(resolved) if len(resolved) > 0 else None,
+            num_targets=len(target_hit) if len(target_hit) > 0 else None,
+            num_stops=len(stopped_out) if len(stopped_out) > 0 else None,
         )
 
         # Equity curve: cumulative pts over resolved trades

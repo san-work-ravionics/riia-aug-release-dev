@@ -56,11 +56,11 @@ class AlgoKpisOut(BaseModel):
     profit_factor: float | None = None
     signal_rate: float | None = None
     avg_confidence: float | None = None
-    max_drawdown: float | None = None
     avg_win: float | None = None
     avg_loss: float | None = None
-    max_consec_wins: float | None = None
-    max_consec_losses: float | None = None
+    num_trades: int | None = None
+    num_targets: int | None = None
+    num_stops: int | None = None
 
 
 class AlgoPerformanceOut(BaseModel):
