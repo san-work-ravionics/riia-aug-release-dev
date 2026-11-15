@@ -1,0 +1,327 @@
+// ── Algos — registry, register form, and performance dashboard (F46) ─────────
+import { api } from './api.js';
+import { mkChart, C } from './charts.js';
+
+// ── constants ─────────────────────────────────────────────────────────────────
+
+const _SETUP_LABELS = {
+  triple_screen:     'GEO PAN Triple Screen',
+  smm_double_screen: 'SMM Double Screen',
+  swing_db_dt:       'GEO PAN Swing (DB/DT)',
+  momentum_bb:       'GEO PAN Momentum BB',
+};
+
+const _ALGO_TYPE_LABELS = {
+  asta_setup: 'ASTA Setup',
+  ddqn:       'DDQN',
+  custom:     'Custom',
+};
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+
+function _esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;');
+}
+
+function _fmt(val, decimals = 1) {
+  if (val === null || val === undefined) return 'N/A';
+  const n = Number(val);
+  return isNaN(n) ? 'N/A' : n.toFixed(decimals);
+}
+
+function _statusBadge(status) {
+  const cls = status === 'live' ? 'badge-live' : status === 'paused' ? 'badge-paused' : 'badge-deleted';
+  return `<span class="algo-badge ${_esc(cls)}">${_esc(status)}</span>`;
+}
+
+function _typeBadge(algo_type) {
+  return `<span class="algo-badge badge-type">${_esc(_ALGO_TYPE_LABELS[algo_type] || algo_type)}</span>`;
+}
+
+function _setEl(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+function _setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ── A. Registry table ─────────────────────────────────────────────────────────
+
+function _renderRegistry(algos) {
+  if (!algos || algos.length === 0) {
+    _setEl('algos-registry-tbody',
+      '<tr><td colspan="5" class="empty-row">No algorithms registered</td></tr>');
+    return;
+  }
+
+  const rows = algos.map(a => `
+    <tr>
+      <td>${_esc(a.name)}</td>
+      <td>${_typeBadge(a.algo_type)}</td>
+      <td>${_esc(a.instrument)}${a.setup_key ? ' <span class="algo-setup-key">(' + _esc(_SETUP_LABELS[a.setup_key] || a.setup_key) + ')</span>' : ''}</td>
+      <td>${_statusBadge(a.status)}</td>
+      <td class="algo-actions">
+        ${a.status !== 'live'
+          ? `<button class="btn btn-xs btn-build" onclick="algoSetLive('${_esc(a.algo_id)}')">Go Live</button>`
+          : `<button class="btn btn-xs btn-ghost" onclick="algoPause('${_esc(a.algo_id)}')">Pause</button>`}
+        <button class="btn btn-xs btn-ghost" onclick="algoShowPerf('${_esc(a.algo_id)}', '${_esc(a.name)}')">Perf</button>
+        <button class="btn btn-xs btn-danger-ghost" onclick="algoDelete('${_esc(a.algo_id)}')">Delete</button>
+      </td>
+    </tr>`).join('');
+
+  _setEl('algos-registry-tbody', rows);
+}
+
+// ── B. Register form ──────────────────────────────────────────────────────────
+
+export function algoRegisterToggle() {
+  const form = document.getElementById('algos-register-form');
+  if (!form) return;
+  const hidden = form.style.display === 'none' || form.style.display === '';
+  form.style.display = hidden ? 'block' : 'none';
+  if (hidden) {
+    // reset form fields
+    const nameEl = document.getElementById('algos-register-name');
+    const descEl = document.getElementById('algos-register-desc');
+    if (nameEl) nameEl.value = '';
+    if (descEl) descEl.value = '';
+    _algoTypeChanged();
+  }
+}
+
+function _algoTypeChanged() {
+  const typeEl = document.getElementById('algos-register-type');
+  const setupRow = document.getElementById('algos-setup-row');
+  const setupEl = document.getElementById('algos-register-setup');
+  const submitBtn = document.getElementById('algos-register-submit');
+  if (!typeEl) return;
+  const isAsta = typeEl.value === 'asta_setup';
+  if (setupRow) setupRow.style.display = isAsta ? '' : 'none';
+  if (setupEl) setupEl.required = isAsta;
+  if (submitBtn) {
+    const name = (document.getElementById('algos-register-name') || {}).value || '';
+    submitBtn.disabled = !name.trim() || (isAsta && !(setupEl && setupEl.value));
+  }
+}
+
+export async function algoSubmitRegister() {
+  const nameEl = document.getElementById('algos-register-name');
+  const typeEl = document.getElementById('algos-register-type');
+  const setupEl = document.getElementById('algos-register-setup');
+  const instEl = document.getElementById('algos-register-instrument');
+  const descEl = document.getElementById('algos-register-desc');
+  const submitBtn = document.getElementById('algos-register-submit');
+  if (!nameEl || !typeEl || !instEl) return;
+
+  const name = nameEl.value.trim();
+  const algo_type = typeEl.value;
+  const setup_key = algo_type === 'asta_setup' ? (setupEl ? setupEl.value : null) : null;
+  const instrument = instEl.value;
+  const description = descEl ? descEl.value.trim() : '';
+
+  if (!name) { alert('Name is required'); return; }
+  if (algo_type === 'asta_setup' && !setup_key) { alert('Setup is required for ASTA Setup type'); return; }
+
+  if (submitBtn) submitBtn.disabled = true;
+  try {
+    await api('/api/v1/workflow/algos', 'POST', {
+      name, algo_type, setup_key: setup_key || null,
+      instrument, description: description || null,
+    });
+    algoRegisterToggle();
+    await loadAlgos();
+  } catch (e) {
+    alert('Registration failed: ' + e.message);
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+// ── Registry actions ──────────────────────────────────────────────────────────
+
+export async function algoSetLive(algo_id) {
+  try {
+    await api(`/api/v1/workflow/algos/${algo_id}`, 'PATCH', { status: 'live' });
+    await loadAlgos();
+  } catch (e) {
+    alert('Failed to set live: ' + e.message);
+  }
+}
+
+export async function algoPause(algo_id) {
+  try {
+    await api(`/api/v1/workflow/algos/${algo_id}`, 'PATCH', { status: 'paused' });
+    await loadAlgos();
+  } catch (e) {
+    alert('Failed to pause: ' + e.message);
+  }
+}
+
+export async function algoDelete(algo_id) {
+  if (!confirm('Delete this algorithm? This cannot be undone.')) return;
+  try {
+    await api(`/api/v1/workflow/algos/${algo_id}`, 'DELETE');
+    await loadAlgos();
+  } catch (e) {
+    alert('Failed to delete: ' + e.message);
+  }
+}
+
+// ── C. Performance panel ──────────────────────────────────────────────────────
+
+const _DDQN_NA_TITLE = 'Trade-level data unavailable for DDQN — requires signal-capture table';
+
+export async function algoShowPerf(algo_id, algo_name) {
+  const panel = document.getElementById('algos-perf-panel');
+  if (panel) panel.style.display = 'block';
+  _setEl('algos-perf-title', _esc(algo_name) + ' Performance');
+
+  // Reset KPI tiles
+  const kpiIds = [
+    'algo-kpi-win-rate', 'algo-kpi-total-pts', 'algo-kpi-profit-factor',
+    'algo-kpi-signal-rate', 'algo-kpi-avg-confidence', 'algo-kpi-max-drawdown',
+    'algo-kpi-avg-win', 'algo-kpi-avg-loss', 'algo-kpi-max-consec-wins',
+    'algo-kpi-max-consec-losses',
+  ];
+  kpiIds.forEach(id => _setVal(id, '…'));
+
+  _setEl('algos-recent-tbody', '<tr><td colspan="5">Loading…</td></tr>');
+
+  try {
+    const data = await api(`/api/v1/experience/rita/algo-performance?algo_id=${encodeURIComponent(algo_id)}`);
+    const k = data.kpis || {};
+
+    function _kv(id, val, unit, decimals) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (val === null || val === undefined) {
+        el.textContent = 'N/A';
+        el.title = _DDQN_NA_TITLE;
+      } else {
+        el.textContent = _fmt(val, decimals) + (unit || '');
+        el.title = '';
+      }
+    }
+
+    _kv('algo-kpi-win-rate', k.win_rate, '%', 1);
+    _kv('algo-kpi-total-pts', k.total_pts, ' pts', 1);
+    _kv('algo-kpi-profit-factor', k.profit_factor, '', 2);
+    _kv('algo-kpi-signal-rate', k.signal_rate, '%', 1);
+    _kv('algo-kpi-avg-confidence', k.avg_confidence !== undefined ? (k.avg_confidence !== null ? k.avg_confidence * 100 : null) : null, '%', 1);
+    _kv('algo-kpi-max-drawdown', k.max_drawdown, ' pts', 1);
+    _kv('algo-kpi-avg-win', k.avg_win, ' pts', 1);
+    _kv('algo-kpi-avg-loss', k.avg_loss, ' pts', 1);
+    _kv('algo-kpi-max-consec-wins', k.max_consec_wins, '', 0);
+    _kv('algo-kpi-max-consec-losses', k.max_consec_losses, '', 0);
+
+    // Chart 1: equity curve
+    const eq = data.equity_curve || [];
+    if (eq.length > 0) {
+      mkChart('algo-chart-equity', {
+        type: 'line',
+        data: {
+          labels: eq.map(r => r.date),
+          datasets: [{
+            label: 'Cumulative Pts',
+            data: eq.map(r => r.cumulative_pts),
+            borderColor: C.build,
+            backgroundColor: 'transparent',
+            tension: 0.3,
+            pointRadius: 0,
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { ticks: { maxTicksLimit: 8 } } },
+        },
+      });
+    }
+
+    // Chart 2: signal markers (scatter)
+    const sm = data.signal_markers || [];
+    if (sm.length > 0) {
+      const buys = sm.filter(r => r.signal === 'BUY');
+      const sells = sm.filter(r => r.signal === 'SELL');
+      mkChart('algo-chart-signals', {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'BUY',
+              data: buys.map((r, i) => ({ x: i, y: r.close })),
+              backgroundColor: C.build,
+              pointRadius: 5,
+              pointStyle: 'triangle',
+            },
+            {
+              label: 'SELL',
+              data: sells.map((r, i) => ({ x: i, y: r.close })),
+              backgroundColor: C.danger,
+              pointRadius: 5,
+              pointStyle: 'triangle',
+              rotation: 180,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: true } },
+        },
+      });
+    }
+
+    // Recent signals table
+    const recent = data.recent_signals || [];
+    if (recent.length === 0) {
+      _setEl('algos-recent-tbody', '<tr><td colspan="5" class="empty-row">No recent signals</td></tr>');
+    } else {
+      const rows = recent.map(r => `
+        <tr>
+          <td>${_esc(r.date)}</td>
+          <td><span class="algo-sig-badge ${r.signal === 'BUY' ? 'sig-buy' : 'sig-sell'}">${_esc(r.signal)}</span></td>
+          <td>${r.close !== null && r.close !== undefined ? _fmt(r.close, 2) : '—'}</td>
+          <td>${r.confidence !== null && r.confidence !== undefined ? _fmt(r.confidence * 100, 1) + '%' : '—'}</td>
+          <td class="${r.outcome === 'target' ? 'col-build' : r.outcome === 'stopped' ? 'col-danger' : ''}">${_esc(r.outcome || '—')}</td>
+        </tr>`).join('');
+      _setEl('algos-recent-tbody', rows);
+    }
+  } catch (e) {
+    kpiIds.forEach(id => _setVal(id, '—'));
+    _setEl('algos-recent-tbody', `<tr><td colspan="5" class="empty-row">Error: ${_esc(e.message)}</td></tr>`);
+  }
+}
+
+// ── Entry point ───────────────────────────────────────────────────────────────
+
+export async function loadAlgos() {
+  try {
+    const algos = await api('/api/v1/experience/rita/algos');
+    _renderRegistry(algos);
+  } catch (e) {
+    _setEl('algos-registry-tbody',
+      `<tr><td colspan="5" class="empty-row">Error loading algos: ${_esc(e.message)}</td></tr>`);
+  }
+
+  // Wire up form type selector
+  const typeEl = document.getElementById('algos-register-type');
+  if (typeEl) typeEl.addEventListener('change', _algoTypeChanged);
+  const nameEl = document.getElementById('algos-register-name');
+  if (nameEl) nameEl.addEventListener('input', _algoTypeChanged);
+
+  _algoTypeChanged();
+}
+
+// ── Window bindings ───────────────────────────────────────────────────────────
+
+window.loadAlgos        = loadAlgos;
+window.algoRegisterToggle = algoRegisterToggle;
+window.algoSubmitRegister = algoSubmitRegister;
+window.algoSetLive      = algoSetLive;
+window.algoPause        = algoPause;
+window.algoDelete       = algoDelete;
+window.algoShowPerf     = algoShowPerf;

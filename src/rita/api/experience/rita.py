@@ -2554,3 +2554,311 @@ def asta_signals(
         rows.append(r)
 
     return {"summary": summary, "rows": rows}
+
+
+# ── GET /api/v1/experience/rita/algos ─────────────────────────────────────────
+
+@router.get("/experience/rita/algos", summary="List non-deleted algorithms (Experience tier)")
+def list_algos_experience(db: Session = Depends(get_db)) -> list[dict]:
+    """Return all non-deleted registered algorithms.
+
+    Experience tier — read-only, no DB writes.
+    """
+    from rita.repositories.algo_repository import AlgoRepository
+    from rita.schemas.algo import AlgoOut
+
+    rows = AlgoRepository(db).get_all_active()
+    return [AlgoOut.model_validate(r).model_dump(mode="json") for r in rows]
+
+
+# ── GET /api/v1/experience/rita/algo-performance ───────────────────────────────
+
+@router.get("/experience/rita/algo-performance", summary="Algo performance dashboard (Experience tier)")
+def algo_performance(
+    algo_id: str,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return KPIs, equity curve, signal markers and recent signals for an algo.
+
+    For asta_setup algos: computed from the asta_labeled_dataset.csv filtered by setup_key.
+    For ddqn algos: derived from training_runs (backtest_return, backtest_mdd, backtest_trades).
+    Experience tier — read-only, no DB writes, no db.commit().
+    """
+    import math
+    import numpy as np
+    import pandas as pd
+    from pathlib import Path
+    from fastapi import HTTPException
+
+    from rita.config import get_settings as _gs
+    from rita.repositories.algo_repository import AlgoRepository
+    from rita.schemas.algo import AlgoKpisOut, AlgoPerformanceOut
+
+    repo = AlgoRepository(db)
+    algo = repo.find_by_id(algo_id)
+    if algo is None:
+        raise HTTPException(status_code=404, detail=f"Algo '{algo_id}' not found")
+
+    if algo.algo_type == "asta_setup":
+        _settings = _gs()
+        inst = algo.instrument.upper()
+        csv_path = Path(_settings.data.input_dir) / inst / "asta_labeled_dataset.csv"
+        if not csv_path.exists():
+            raise HTTPException(status_code=404,
+                                detail=f"asta_labeled_dataset.csv not found for instrument {inst}")
+
+        df = pd.read_csv(str(csv_path), index_col=0, parse_dates=True)
+
+        # Filter to this setup
+        setup_df = df[df["asta_setup"] == algo.setup_key].copy()
+        if setup_df.empty:
+            kpis = AlgoKpisOut()
+            return AlgoPerformanceOut(kpis=kpis).model_dump(mode="json")
+
+        total_rows = len(df)
+        active_signals = len(setup_df)
+
+        # Forward simulation for outcomes (same logic as asta-signals endpoint)
+        MAX_HOLD = 20
+        highs = df["High"].values
+        lows = df["Low"].values
+        n = len(df)
+
+        outcomes_map: dict[int, str] = {}
+        pts_map: dict[int, float] = {}
+
+        for idx in setup_df.index:
+            pos = df.index.get_loc(idx)
+            sig = df.at[idx, "asta_signal"]
+            sl_val = df.at[idx, "asta_stop_loss"]
+            tgt_val = df.at[idx, "asta_target"]
+            close_val = df.at[idx, "Close"]
+
+            try:
+                sl = float(sl_val)
+                tgt = float(tgt_val)
+                close = float(close_val)
+            except (TypeError, ValueError):
+                outcomes_map[pos] = "open"
+                pts_map[pos] = 0.0
+                continue
+
+            if math.isnan(sl) or math.isnan(tgt) or math.isnan(close) or sl == 0 or tgt == 0:
+                outcomes_map[pos] = "open"
+                pts_map[pos] = 0.0
+                continue
+
+            outcome = "open"
+            pts = 0.0
+            for j in range(pos + 1, min(pos + 1 + MAX_HOLD, n)):
+                if sig == "BUY":
+                    if lows[j] <= sl:
+                        outcome = "stopped"
+                        pts = sl - close
+                        break
+                    if highs[j] >= tgt:
+                        outcome = "target"
+                        pts = tgt - close
+                        break
+                else:
+                    if highs[j] >= sl:
+                        outcome = "stopped"
+                        pts = close - sl
+                        break
+                    if lows[j] <= tgt:
+                        outcome = "target"
+                        pts = close - tgt
+                        break
+
+            outcomes_map[pos] = outcome
+            pts_map[pos] = round(pts, 2)
+
+        setup_df = setup_df.copy()
+        setup_df["_outcome"] = [outcomes_map.get(df.index.get_loc(i), "open") for i in setup_df.index]
+        setup_df["_pts"] = [pts_map.get(df.index.get_loc(i), 0.0) for i in setup_df.index]
+
+        resolved = setup_df[setup_df["_outcome"] != "open"]
+        target_hit = resolved[resolved["_outcome"] == "target"]
+        stopped_out = resolved[resolved["_outcome"] == "stopped"]
+
+        win_rate = (len(target_hit) / len(resolved) * 100) if len(resolved) > 0 else None
+        total_pts = float(resolved["_pts"].sum()) if len(resolved) > 0 else None
+        gross_win = float(target_hit["_pts"].sum()) if len(target_hit) > 0 else None
+        gross_loss = float(stopped_out["_pts"].sum()) if len(stopped_out) > 0 else None
+        profit_factor = None
+        if gross_win is not None and gross_loss is not None and abs(gross_loss) > 0:
+            profit_factor = gross_win / abs(gross_loss)
+        signal_rate = (active_signals / total_rows * 100) if total_rows > 0 else None
+        avg_confidence: float | None = None
+        if "asta_confidence" in setup_df.columns:
+            conf_vals = pd.to_numeric(setup_df["asta_confidence"], errors="coerce").dropna()
+            avg_confidence = float(conf_vals.mean()) if len(conf_vals) > 0 else None
+        avg_win = float(target_hit["_pts"].mean()) if len(target_hit) > 0 else None
+        avg_loss = float(stopped_out["_pts"].mean()) if len(stopped_out) > 0 else None
+
+        # Max drawdown (peak-to-trough of running cumulative pts)
+        max_drawdown: float | None = None
+        if len(resolved) > 0:
+            cum_pts = resolved["_pts"].cumsum().values
+            peak = np.maximum.accumulate(cum_pts)
+            drawdown = cum_pts - peak
+            max_drawdown = float(drawdown.min())
+
+        # Max consecutive wins / losses
+        max_consec_wins: float | None = None
+        max_consec_losses: float | None = None
+        if len(resolved) > 0:
+            outcomes_seq = resolved["_outcome"].tolist()
+            best_w = cur_w = 0
+            best_l = cur_l = 0
+            for o in outcomes_seq:
+                if o == "target":
+                    cur_w += 1
+                    cur_l = 0
+                    best_w = max(best_w, cur_w)
+                else:
+                    cur_l += 1
+                    cur_w = 0
+                    best_l = max(best_l, cur_l)
+            max_consec_wins = float(best_w)
+            max_consec_losses = float(best_l)
+
+        kpis = AlgoKpisOut(
+            win_rate=round(win_rate, 2) if win_rate is not None else None,
+            total_pts=round(total_pts, 2) if total_pts is not None else None,
+            profit_factor=round(profit_factor, 3) if profit_factor is not None else None,
+            signal_rate=round(signal_rate, 2) if signal_rate is not None else None,
+            avg_confidence=round(avg_confidence, 4) if avg_confidence is not None else None,
+            max_drawdown=round(max_drawdown, 2) if max_drawdown is not None else None,
+            avg_win=round(avg_win, 2) if avg_win is not None else None,
+            avg_loss=round(avg_loss, 2) if avg_loss is not None else None,
+            max_consec_wins=max_consec_wins,
+            max_consec_losses=max_consec_losses,
+        )
+
+        # Equity curve: cumulative pts over resolved trades
+        equity_curve = []
+        cum = 0.0
+        for idx, row in resolved.iterrows():
+            cum += float(row["_pts"])
+            equity_curve.append({"date": str(idx.date()), "cumulative_pts": round(cum, 2)})
+
+        # Signal markers
+        signal_markers = []
+        for idx, row in setup_df.iterrows():
+            sig_val = str(row.get("asta_signal", "")) if row.get("asta_signal") else ""
+            conf_val = row.get("asta_confidence")
+            setup_val = str(row.get("asta_setup", "")) if row.get("asta_setup") else ""
+            close_v = row.get("Close")
+            try:
+                close_f = float(close_v) if close_v is not None else None
+            except (TypeError, ValueError):
+                close_f = None
+            try:
+                conf_f = float(conf_val) if conf_val is not None else None
+            except (TypeError, ValueError):
+                conf_f = None
+            signal_markers.append({
+                "date": str(idx.date()),
+                "signal": sig_val,
+                "close": close_f,
+                "setup": setup_val,
+                "confidence": round(conf_f, 4) if conf_f is not None else None,
+            })
+
+        # Recent signals (last 20)
+        recent_rows = []
+        for idx, row in setup_df.tail(20).iterrows():
+            sig_val = str(row.get("asta_signal", ""))
+            conf_val = row.get("asta_confidence")
+            try:
+                conf_f = round(float(conf_val), 4) if conf_val is not None else None
+            except (TypeError, ValueError):
+                conf_f = None
+            sl_v = row.get("asta_stop_loss")
+            tgt_v = row.get("asta_target")
+            close_v = row.get("Close")
+            outcome_v = row.get("_outcome", "open")
+            pts_v = row.get("_pts", 0.0)
+            try:
+                sl_f = round(float(sl_v), 2) if sl_v is not None else None
+            except (TypeError, ValueError):
+                sl_f = None
+            try:
+                tgt_f = round(float(tgt_v), 2) if tgt_v is not None else None
+            except (TypeError, ValueError):
+                tgt_f = None
+            try:
+                close_f = round(float(close_v), 2) if close_v is not None else None
+            except (TypeError, ValueError):
+                close_f = None
+            recent_rows.append({
+                "date": str(idx.date()),
+                "signal": sig_val,
+                "setup": str(row.get("asta_setup", "")),
+                "confidence": conf_f,
+                "stop_loss": sl_f,
+                "target": tgt_f,
+                "close": close_f,
+                "outcome": str(outcome_v),
+                "pts": round(float(pts_v), 2) if pts_v is not None else None,
+            })
+
+        return AlgoPerformanceOut(
+            kpis=kpis,
+            equity_curve=equity_curve,
+            signal_markers=signal_markers,
+            recent_signals=recent_rows,
+        ).model_dump(mode="json")
+
+    elif algo.algo_type == "ddqn":
+        # DDQN: derive available KPIs from training_runs; 6 trade-level KPIs are null
+        from rita.repositories.training import TrainingRunsRepository
+
+        inst = algo.instrument.upper()
+        all_runs = TrainingRunsRepository(db).read_all()
+        inst_runs = [r for r in all_runs
+                     if r.instrument and r.instrument.upper() == inst
+                     and r.status in ("complete", "completed")]
+
+        total_pts: float | None = None
+        max_drawdown: float | None = None
+        signal_rate: float | None = None
+
+        if inst_runs:
+            latest = max(inst_runs, key=lambda r: r.recorded_at or r.started_at)
+            if latest.backtest_return is not None:
+                total_pts = round(float(latest.backtest_return) * 100, 2)
+            if latest.backtest_mdd is not None:
+                max_drawdown = round(float(latest.backtest_mdd), 4)
+            if latest.backtest_trades is not None and latest.backtest_return is not None:
+                # Approximate trading days from run dates
+                from rita.repositories.backtest import BacktestRunsRepository
+                bt_runs = [r for r in BacktestRunsRepository(db).read_all()
+                           if r.instrument and r.instrument.upper() == inst
+                           and r.status in ("complete", "completed")]
+                if bt_runs:
+                    bt_latest = max(bt_runs, key=lambda r: r.ended_at or r.recorded_at)
+                    if bt_latest.start_date and bt_latest.end_date:
+                        days = (bt_latest.end_date - bt_latest.start_date).days
+                        trading_days = max(int(days * 252 / 365), 1)
+                        signal_rate = round(latest.backtest_trades / trading_days * 100, 2)
+
+        kpis = AlgoKpisOut(
+            total_pts=total_pts,
+            max_drawdown=max_drawdown,
+            signal_rate=signal_rate,
+            # 6 trade-level KPIs are null for DDQN — per-signal records not available
+            win_rate=None,
+            profit_factor=None,
+            avg_confidence=None,
+            avg_win=None,
+            avg_loss=None,
+            max_consec_wins=None,
+            max_consec_losses=None,
+        )
+        return AlgoPerformanceOut(kpis=kpis).model_dump(mode="json")
+
+    else:
+        # Custom or unknown: return empty
+        return AlgoPerformanceOut(kpis=AlgoKpisOut()).model_dump(mode="json")

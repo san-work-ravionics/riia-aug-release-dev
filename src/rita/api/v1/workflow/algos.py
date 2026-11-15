@@ -1,0 +1,63 @@
+"""Workflow router for algo mutations (F46).
+
+ADR-001 Tier 2 (Business Process): write operations on the algo_registry.
+These routes are JS-callable (dashboard calls POST/PATCH/DELETE from algos.js).
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from rita.database import get_db
+from rita.models.algo import AlgoModel
+from rita.repositories.algo_repository import AlgoRepository
+from rita.schemas.algo import AlgoCreate, AlgoOut, AlgoStatusUpdate
+
+router = APIRouter(prefix="/api/v1/workflow", tags=["workflow:algos"])
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+@router.post("/algos", response_model=AlgoOut, status_code=status.HTTP_201_CREATED,
+             summary="Register a new trading algorithm")
+def workflow_create_algo(body: AlgoCreate, db: Session = Depends(get_db)) -> AlgoOut:
+    now = _utcnow()
+    row = AlgoModel(
+        algo_id=str(uuid.uuid4()),
+        name=body.name,
+        algo_type=body.algo_type,
+        setup_key=body.setup_key,
+        instrument=body.instrument.upper(),
+        status="paused",
+        description=body.description,
+        created_at=now,
+        updated_at=now,
+    )
+    AlgoRepository(db).create(row)
+    return AlgoOut.model_validate(row)
+
+
+@router.patch("/algos/{algo_id}", response_model=AlgoOut,
+              summary="Set algo live or paused")
+def workflow_update_algo_status(
+    algo_id: str,
+    body: AlgoStatusUpdate,
+    db: Session = Depends(get_db),
+) -> AlgoOut:
+    row = AlgoRepository(db).update_status(algo_id, body.status)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Algo '{algo_id}' not found")
+    return AlgoOut.model_validate(row)
+
+
+@router.delete("/algos/{algo_id}", status_code=status.HTTP_204_NO_CONTENT,
+               summary="Soft-delete algo")
+def workflow_delete_algo(algo_id: str, db: Session = Depends(get_db)) -> None:
+    deleted = AlgoRepository(db).soft_delete(algo_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Algo '{algo_id}' not found")

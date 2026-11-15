@@ -385,6 +385,9 @@ tr:hover td{background:var(--surface2);}
     <div class="nav-item p01" data-s="asta-signals" onclick="show('asta-signals',this)">
       <span class="nav-icon">◎</span> Signals
     </div>
+    <div class="nav-item p01" data-s="algos" onclick="show('algos',this)">
+      <span class="nav-icon">⟐</span> Algos
+    </div>
     <div class="nav-item p01" data-s="strategy" onclick="show('strategy',this)">
       <span class="nav-icon">◎</span> <span data-i18n="heading.strategy">Strategy</span>
     </div>
@@ -651,6 +654,169 @@ tr:hover td{background:var(--surface2);}
       <p style="margin-top:8px"><strong>Confidence Score:</strong> (mandatory_met + optional_met) / total_conditions. Range 0–1. Higher confidence = more conditions satisfied beyond the mandatory gate.</p>
     </div>
   </details>
+</section>
+
+
+<!-- ════════════════ ALGOS ════════════════ -->
+<section id="sec-algos" class="section">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Algos</div>
+      <div class="page-sub">Register ASTA or DDQN algorithms, set them live, and inspect performance dashboards</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn btn-ghost btn-sm" onclick="algoRegisterToggle()">+ Register</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadAlgos()">Refresh</button>
+    </div>
+  </div>
+
+  <!-- Register Form (hidden by default) -->
+  <div id="algos-register-form" class="card" style="display:none;margin-bottom:16px">
+    <div class="card-hdr"><span class="card-title">Register Algorithm</span></div>
+    <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px">
+      <div>
+        <label class="form-label">Name</label>
+        <input id="algos-register-name" class="form-input" type="text" placeholder="My ASTA Triple Screen" />
+      </div>
+      <div>
+        <label class="form-label">Type</label>
+        <select id="algos-register-type" class="form-input">
+          <option value="asta_setup">ASTA Setup</option>
+          <option value="ddqn">DDQN</option>
+        </select>
+      </div>
+      <div id="algos-setup-row">
+        <label class="form-label">Setup</label>
+        <select id="algos-register-setup" class="form-input">
+          <option value="">— select —</option>
+          <option value="triple_screen">GEO PAN Triple Screen</option>
+          <option value="smm_double_screen">SMM Double Screen</option>
+          <option value="swing_db_dt">GEO PAN Swing (DB/DT)</option>
+          <option value="momentum_bb">GEO PAN Momentum BB</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Instrument</label>
+        <select id="algos-register-instrument" class="form-input">
+          <option value="NIFTY">NIFTY</option>
+          <option value="BANKNIFTY">BANKNIFTY</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1">
+        <label class="form-label">Description (optional)</label>
+        <input id="algos-register-desc" class="form-input" type="text" placeholder="Short description…" />
+      </div>
+      <div style="grid-column:1/-1;display:flex;gap:8px">
+        <button id="algos-register-submit" class="btn btn-build btn-sm" onclick="algoSubmitRegister()">Register</button>
+        <button class="btn btn-ghost btn-sm" onclick="algoRegisterToggle()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registry Table -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr"><span class="card-title">Algorithm Registry</span></div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Instrument / Setup</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="algos-registry-tbody">
+          <tr><td colspan="5" class="empty-row">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Performance Panel (hidden until an algo is selected) -->
+  <div id="algos-perf-panel" class="card" style="display:none">
+    <div class="card-hdr">
+      <span id="algos-perf-title" class="card-title">Performance</span>
+    </div>
+
+    <!-- KPI Strip (10 tiles) -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 12px 0">
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Win Rate</div>
+        <div class="kpi-val" id="algo-kpi-win-rate">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Total Pts</div>
+        <div class="kpi-val" id="algo-kpi-total-pts">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Profit Factor</div>
+        <div class="kpi-val" id="algo-kpi-profit-factor">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Signal Rate</div>
+        <div class="kpi-val" id="algo-kpi-signal-rate">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Avg Confidence</div>
+        <div class="kpi-val" id="algo-kpi-avg-confidence">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Max Drawdown</div>
+        <div class="kpi-val" id="algo-kpi-max-drawdown">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Avg Win</div>
+        <div class="kpi-val" id="algo-kpi-avg-win">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Avg Loss</div>
+        <div class="kpi-val" id="algo-kpi-avg-loss">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Max Consec Wins</div>
+        <div class="kpi-val" id="algo-kpi-max-consec-wins">—</div>
+      </div>
+      <div class="kpi kpi-sm">
+        <div class="kpi-label">Max Consec Losses</div>
+        <div class="kpi-val" id="algo-kpi-max-consec-losses">—</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px">
+      <div class="chart-wrap">
+        <div class="chart-title">Equity Curve <span style="font-weight:400;color:var(--t3);font-size:11px">— cumulative pts over resolved trades</span></div>
+        <div class="chart-box" style="height:220px"><canvas id="algo-chart-equity"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Signal Markers <span style="font-weight:400;color:var(--t3);font-size:11px">— ▲ BUY · ▼ SELL</span></div>
+        <div class="chart-box" style="height:220px"><canvas id="algo-chart-signals"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Recent Signals Table -->
+    <div style="padding:0 12px 12px">
+      <div class="card-hdr" style="padding:0 0 8px"><span class="card-title" style="font-size:12px">Recent Signals (last 20)</span></div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Signal</th>
+              <th>Close</th>
+              <th>Confidence</th>
+              <th>Outcome</th>
+            </tr>
+          </thead>
+          <tbody id="algos-recent-tbody">
+            <tr><td colspan="5" class="empty-row">Select an algo above to view signals</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </section>
 
 

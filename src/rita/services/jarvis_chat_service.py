@@ -397,3 +397,27 @@ class JarvisChatService:
 
     def _i_help(self, _t: _Turn, _slots) -> _Reply:
         return _Reply("help.menu")
+
+    # F46 — algo status ──────────────────────────────────────────────────────────────────────
+
+    def _i_algo_status(self, _t: _Turn, _slots) -> _Reply:
+        from rita.repositories.algo_repository import AlgoRepository
+        from rita.schemas.jarvis import AlgoCardData
+
+        live_rows = AlgoRepository(self._db).get_live()
+        if not live_rows:
+            return _Reply("algo.none")
+        n = len(live_rows)
+        s = "s" if n != 1 else ""
+        cards = [{"kind": "algo", "data": [
+            AlgoCardData(
+                algo_id=a.algo_id,
+                name=a.name,
+                instrument=a.instrument,
+                total_pts=None,
+                win_rate=None,
+                signal_rate=None,
+            ).model_dump(mode="json")
+            for a in live_rows
+        ]}]
+        return _Reply("algo.status", {"n": str(n), "s": s}, cards=cards)

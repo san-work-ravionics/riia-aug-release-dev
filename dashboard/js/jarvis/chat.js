@@ -98,6 +98,33 @@ const CARD_RENDERERS = {
       : `<span class="jv-badge ${d.all_on_track ? 'ok' : 'none'}">${esc(d.all_on_track ? t('chat.hedge.none') : t('wn.bucket.no_data'))}</span>`;
     return `<div class="jv-card-title">${esc(t('chat.hedge.title'))}</div><div class="jv-hold-chips">${head}</div>${cta}`;
   },
+  // F46: algo status card — compact table: Name · Instrument · Win Rate · Total Pts · Signal Rate
+  algo(data) {
+    const rows = (Array.isArray(data) ? data : []).map(a => {
+      const wr = a.win_rate !== null && a.win_rate !== undefined ? a.win_rate : null;
+      const wrBadge = wr !== null
+        ? `<span class="jv-badge ${wr > 50 ? 'ok' : 'warn'}">${Number(wr).toFixed(1)}%</span>`
+        : '—';
+      const pts = a.total_pts !== null && a.total_pts !== undefined
+        ? Number(a.total_pts).toFixed(1) + ' pts' : '—';
+      const sr = a.signal_rate !== null && a.signal_rate !== undefined
+        ? Number(a.signal_rate).toFixed(1) + '%' : '—';
+      return `<tr>
+        <td>${esc(a.name)}</td>
+        <td class="mono">${esc(a.instrument)}</td>
+        <td>${wrBadge}</td>
+        <td class="num">${esc(pts)}</td>
+        <td class="num">${esc(sr)}</td>
+      </tr>`;
+    }).join('');
+    const link = '/dashboard/rita.html#algos';
+    return `<div class="jv-card-title">Live Algorithms</div>
+      <table class="jv-table jv-table-sm">
+        <thead><tr><th>Name</th><th>Instrument</th><th>Win Rate</th><th class="num">Total Pts</th><th class="num">Signal Rate</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5">No live algos</td></tr>'}</tbody>
+      </table>
+      <a class="jv-wn-hedge-cta" href="${esc(link)}">Open Algos →</a>`;
+  },
 };
 
 export const CARD_KINDS = Object.keys(CARD_RENDERERS);

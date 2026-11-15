@@ -460,12 +460,26 @@ class HedgeSignalCard(BaseModel):
     data: HedgeSignalCardData
 
 
+class AlgoCardData(BaseModel):
+    algo_id: str
+    name: str
+    instrument: str
+    total_pts: float | None = None
+    win_rate: float | None = None
+    signal_rate: float | None = None
+
+
+class AlgoCard(BaseModel):
+    kind: Literal["algo"] = "algo"
+    data: list[AlgoCardData]
+
+
 CardOut = Annotated[
-    Union[GoalCard, HedgeCard, BucketProgressCard, BucketStatusCard, HedgeSignalCard],
+    Union[GoalCard, HedgeCard, BucketProgressCard, BucketStatusCard, HedgeSignalCard, AlgoCard],
     Field(discriminator="kind"),
 ]
 # the cards the chat can emit: the saved plan, the FnO hedge plan and the F45 bucket cards
-CARD_KINDS = ("goal", "hedge", "bucket_progress", "bucket_status", "hedge_signal")
+CARD_KINDS = ("goal", "hedge", "bucket_progress", "bucket_status", "hedge_signal", "algo")
 
 
 # ── A1–A3 (Workflow) ───────────────────────────────────────────────────────────
@@ -561,6 +575,7 @@ class StateOut(BaseModel):
     chips: list[ChipOut] = []
     chat_model: Literal["ready", "not_loaded"]
     live_holdings: list[LiveHoldingOut] = []
+    live_algos: list[Any] = []  # list[AlgoSummaryOut] — imported lazily to avoid circular deps
 
 
 class RequiredOut(BaseModel):

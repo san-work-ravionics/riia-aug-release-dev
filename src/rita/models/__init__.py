@@ -33,6 +33,7 @@ from .fno_import import (
 from .agent_performance import AgentPerformance
 from .nse_option_bhav import NseOptionBhavModel
 from .jarvis import JarvisMessageModel, JarvisSessionModel, UserJourneyModel
+from .algo import AlgoModel
 
 __all__ = [
     "PositionModel",
@@ -76,4 +77,5 @@ __all__ = [
     "UserJourneyModel",
     "JarvisSessionModel",
     "JarvisMessageModel",
+    "AlgoModel",
 ]

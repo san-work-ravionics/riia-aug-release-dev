@@ -169,13 +169,30 @@ class JarvisPageService:
                     live.append(LiveHoldingOut(
                         instrument_id=inst, model_action=tr.today_action, invested_fraction=tr.invested_fraction,
                         sl_distance=tr.sl_distance, sl_hit=tr.sl_hit, next_reset=tr.next_reset, as_of=tr.as_of))
+        # live_algos: instrument-based, not location-scoped
+        from rita.repositories.algo_repository import AlgoRepository
+        from rita.schemas.algo import AlgoSummaryOut
+
+        live_algo_rows = AlgoRepository(self._db).get_live()
+        live_algos = [AlgoSummaryOut(
+            algo_id=a.algo_id,
+            name=a.name,
+            instrument=a.instrument,
+            setup_key=a.setup_key,
+            # KPI fields populated as None — computed separately via algo-performance endpoint
+            kpi_total_pts=None,
+            kpi_win_rate=None,
+            kpi_signal_rate=None,
+        ).model_dump(mode="json") for a in live_algo_rows]
+
         return StateOut(
             location=location, location_name=T.LOCATION_NAMES[location], currency=location_currency(location),
             goal=goal, plan_stale=stale, journey=j,
             session=SessionStateOut(session_id=sess.session_id, status=sess.status,
                                     last_activity_at=sess.last_activity_at) if sess else None,
             messages=msgs, chips=[ChipOut(**c) for c in T.chips()],
-            chat_model="ready" if journey_intents.is_ready() else "not_loaded", live_holdings=live)
+            chat_model="ready" if journey_intents.is_ready() else "not_loaded", live_holdings=live,
+            live_algos=live_algos)
 
     # ── A5 ─────────────────────────────────────────────────────────────────────
 

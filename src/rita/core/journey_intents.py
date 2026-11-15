@@ -99,6 +99,12 @@ JOURNEY_INTENTS: dict[str, list[str]] = {
         "hi", "what can you do", "help", "hello", "how does this work", "what can I ask",
         "show me the options", "hey jarvis",
     ],
+    # F46: algo status intent
+    "algo_status": [
+        "how are my algos doing", "show algo performance", "which algos are live",
+        "what is running live", "show my trading algos", "how is ASTA triple screen",
+        "algo status", "are my algos on", "show live strategies", "how are my strategies performing",
+    ],
 }
 
 INTENT_NAMES: tuple[str, ...] = tuple(JOURNEY_INTENTS)

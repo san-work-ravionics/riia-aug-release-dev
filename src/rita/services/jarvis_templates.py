@@ -115,6 +115,9 @@ TEMPLATES: dict[str, str] = {
                   "these:"),
     "fallback.low_confidence": "I didn't catch that. Try one of these:",
     "error.unavailable": "{tool} isn't answering right now. Try again in a minute.",
+    # F46 algo status templates
+    "algo.none": "You have no live algorithms running. Register one in the Algos section.",
+    "algo.status": "You have {n} live algorithm{s} running:",
 }
 
 CHIPS: tuple[tuple[str, str], ...] = (

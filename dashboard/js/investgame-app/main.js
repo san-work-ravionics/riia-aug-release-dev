@@ -7,6 +7,35 @@ import { loadAgentBuilds, submitTokenEstimate, toggleEstimateWidget, closeChartM
 import { loadAgentPanel, agentPanelStep, resetAgentPanel, approveAgentProposal, rejectAgentProposal, setApDays } from './agent-panel.js?v=3';
 import { loadWhatINeed, hasPendingSave } from './what-i-need.js?v=65';
 import { ensureDevToken } from '../shared/dev-auth.js';
+import { api } from '../shared/api.js';
+
+// ── Live Algos strip (F46): rendered when state.live_algos is non-empty ──────
+async function _renderLiveAlgos() {
+  const strip = document.getElementById('ap-live-algos-strip');
+  const rows = document.getElementById('ap-live-algos-rows');
+  if (!strip || !rows) return;
+  try {
+    const state = await api('/api/v1/experience/jarvis/state?location=india');
+    const algos = state && state.live_algos;
+    if (!algos || algos.length === 0) { strip.style.display = 'none'; return; }
+    strip.style.display = '';
+    rows.innerHTML = algos.map(a => {
+      const wr = a.kpi_win_rate !== null && a.kpi_win_rate !== undefined
+        ? ' · Win ' + Number(a.kpi_win_rate).toFixed(1) + '%' : '';
+      const pts = a.kpi_total_pts !== null && a.kpi_total_pts !== undefined
+        ? ' · ' + Number(a.kpi_total_pts).toFixed(1) + ' pts' : '';
+      return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;white-space:nowrap">
+        <strong>${String(a.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</strong>
+        <span style="color:var(--t3)">·</span>
+        <span class="mono">${String(a.instrument || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>
+        ${wr ? '<span style="color:var(--t3)">' + wr.replace(/</g,'&lt;') + '</span>' : ''}
+        ${pts ? '<span style="color:var(--t3)">' + pts.replace(/</g,'&lt;') + '</span>' : ''}
+      </span>`;
+    }).join('');
+  } catch (_) {
+    // Live algos strip is non-critical — silently skip on error
+  }
+}
 
 // ── Register section loaders ─────────────────────────────────────────────────
 registerLoader('investgame', () => {}); // intro page — no data to load
@@ -19,7 +48,7 @@ registerLoader('concepts', loadConcepts);
 registerLoader('crisp-dm', loadCrispDm);
 registerLoader('agent-performance', loadAgentPerformance);
 registerLoader('agent-builds', loadAgentBuilds);
-registerLoader('agent-panel', loadAgentPanel);
+registerLoader('agent-panel', async () => { await loadAgentPanel(); _renderLiveAlgos(); });
 
 // ── Expose to window for onclick attributes ──────────────────────────────────
 window.show = show;
