@@ -5,7 +5,7 @@
 import { api } from '../shared/api.js';
 import { mkChart, destroyChart, chartOpts, C } from '../shared/charts.js';
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=21';
+import { t } from './copy.js?v=22';
 import { fmtRate, fmtPp, fmtNum, fmtDate, isNum } from './format.js?v=3';
 import { reasonText } from './chat.js?v=5';
 import { engineStatusText } from './portfolio.js?v=5';

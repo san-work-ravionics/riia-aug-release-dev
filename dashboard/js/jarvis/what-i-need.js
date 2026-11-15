@@ -9,7 +9,7 @@
 // Data shaping is in wn-model.js, charts in wn-plots.js.
 import { api } from '../shared/api.js';
 import { loadGeography, loadEurRates, toEur, allInstruments } from './regions.js?v=5';
-import { t } from './copy.js?v=21';
+import { t } from './copy.js?v=22';
 import { fmtMoney, fmtRate, fmtDate, fmtNum, isNum, locationName } from './format.js?v=3';
 import { esc } from './esc.js?v=3';
 import { loadPortfolio } from './portfolio.js?v=5';

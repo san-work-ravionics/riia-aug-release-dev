@@ -2,7 +2,7 @@
 // KPIs: Actual | Target | Gap | Status (period-scaled from goal_return and geo data).
 // Period tabs drive the instrument returns chart and hedge assessment.
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=21';
+import { t } from './copy.js?v=22';
 import { fmtPctPoint, fmtRate, fmtMoney, fmtDate, isNum } from './format.js?v=3';
 import { allInstruments } from './regions.js?v=5';
 import { mkChart, chartOpts, C } from '../shared/charts.js';

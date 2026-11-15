@@ -2,7 +2,7 @@
 // Every value is a field of that instrument's A6 payload (default engine); nothing is computed here.
 // Comments = "why the engine did this on <date>": the engine's rationale (date, action change, note).
 import { esc } from './esc.js?v=3';
-import { t } from './copy.js?v=21';
+import { t } from './copy.js?v=22';
 import { fmtNum, fmtDate, isNum } from './format.js?v=3';
 import { actionText } from './chat.js?v=5';
 import { pickDefaultEngine, modelEngines } from './instrument.js?v=6';
