@@ -669,15 +669,21 @@ tr:hover td{background:var(--surface2);}
   <!-- Concepts cards -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div class="card">
-      <div class="card-hdr"><span class="card-title">What is an Algo?</span></div>
-      <div style="padding:12px;font-size:13px;color:var(--t2);line-height:1.6">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('algo-what')">
+        <span class="card-title">What is an Algo?</span>
+        <span id="learn-chevron-algo-what">▶</span>
+      </div>
+      <div id="learn-body-algo-what" class="card-body" style="display:none;padding:12px;font-size:13px;color:var(--t2);line-height:1.6">
         <p style="margin:0 0 10px">An algo here is more than a signal trigger. When a setup fires, the algorithm uses its underlying model — either an ASTA rule-set or the DDQN neural network — to <strong>compute three values: entry price, stop-loss, and target</strong>. These are derived from the instrument's current state and the model's confidence in the trade, not from fixed rules.</p>
         <p style="margin:0">An algo marked Live participates in RITA's signal pipeline. One that is Paused or unregistered is excluded from all feeds and backtests. The registry here is the single place to manage which strategies are armed at any time.</p>
       </div>
     </div>
     <div class="card">
-      <div class="card-hdr"><span class="card-title">Pipeline</span></div>
-      <div style="padding:12px;font-size:13px;color:var(--t2);line-height:1.6">
+      <div class="card-hdr" style="cursor:pointer" onclick="toggleLearnCard('algo-pipeline')">
+        <span class="card-title">Pipeline</span>
+        <span id="learn-chevron-algo-pipeline">▶</span>
+      </div>
+      <div id="learn-body-algo-pipeline" class="card-body" style="display:none;padding:12px;font-size:13px;color:var(--t2);line-height:1.6">
         <p style="margin:0 0 10px">When a market event arrives, the <strong>classifier layer</strong> identifies the setup type and routes it to the matching algo. The algo engine then queries the instrument's live state, runs the model (rule-based for ASTA, inference for DDQN), and emits entry, SL, and target — which are written to the signal store.</p>
         <p style="margin:0">The performance panel below reads from that signal store. The <strong>equity curve</strong> shows cumulative realised points across resolved trades. The <strong>entry / exit chart</strong> overlays each BUY and SELL signal at its entry price on the actual price series. The <strong>KPI tiles</strong> summarise aggregate statistics across all resolved trades for the full history, independent of the year filter.</p>
       </div>
