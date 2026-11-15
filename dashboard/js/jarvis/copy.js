@@ -1,6 +1,7 @@
 // Jarvis — every user-visible UI string (design §6 + Revision 1 copy changes; approved by the user
 // for the first build, 2026-10-28). Chat replies are server templates (jarvis_templates.py).
 // t(id, slots) fills {slot}s and returns PLAIN text — callers esc() it before innerHTML.
+// v=22: F48 Algo Check Now — added tab.algos + algos.* keys.
 
 export const COPY = {
   'page.title': 'RIIA — Jarvis',
@@ -259,6 +260,7 @@ export const COPY = {
 
   // ── Concepts page (how the flow works; RITA Concepts + Agents & Linked Analytics pattern) ──
   'tab.concepts': 'Concepts',
+  'tab.algos': 'Algos',
   'cx.sub': 'The data science and AI behind your plan and portfolio, stage by stage, and which parts are models',
   'cx.flow.col.step': 'Step',
   'cx.flow.col.who': 'Done by',
@@ -506,6 +508,22 @@ export const COPY = {
   'wn.bucket.summary_nodata': 'No performance data yet — status unavailable',
   'wn.bucket.summary_risk': '{n} bucket(s) at risk',
   'wn.bucket.col.instruments': 'Status',
+
+  // ── Algos page (F48 — Algo Check Now) ──
+  'algos.loading': 'Loading algos…',
+  'algos.empty': 'No algos registered. Use the RITA dashboard to register a strategy.',
+  'algos.error': 'Could not load algos — {message}',
+  'algos.go_live': 'Go Live',
+  'algos.pause': 'Pause',
+  'algos.delete': 'Delete',
+  'algos.delete_confirm': 'Confirm delete',
+  'algos.perf': 'Perf',
+  'algos.check_now': 'Check Now',
+  'algos.mutation_error': 'Could not complete action — {message}',
+  'algos.signal.loading': 'Fetching signal…',
+  'algos.signal.error': 'Could not fetch signal — {message}',
+  'algos.signal.close': '✕',
+  'algos.signal.no_signal': 'No signal data available',
 
   'state.no_goal': 'No goal',
   'state.goal_loaded': 'Goal loaded',
