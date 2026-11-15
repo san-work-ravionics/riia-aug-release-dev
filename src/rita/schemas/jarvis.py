@@ -13,6 +13,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from rita.schemas.algo import AlgoSummaryOut
 from rita.schemas.goal_selection import GoalOut, GoalSelectionOut, ModelAction, RequiredReturnOut, Tolerance
 
 Location = Literal["europe", "india", "us"]
@@ -575,7 +576,7 @@ class StateOut(BaseModel):
     chips: list[ChipOut] = []
     chat_model: Literal["ready", "not_loaded"]
     live_holdings: list[LiveHoldingOut] = []
-    live_algos: list[Any] = []  # list[AlgoSummaryOut] — imported lazily to avoid circular deps
+    live_algos: list[AlgoSummaryOut] = []
 
 
 class RequiredOut(BaseModel):
