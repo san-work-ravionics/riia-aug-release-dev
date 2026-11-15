@@ -362,7 +362,7 @@ export async function algoCheckNow(algo_id, algo_name) {
   const wrap  = document.getElementById('algos-registry-wrap');
   if (!panel) return;
   panel.style.display = 'block';
-  if (wrap) { wrap.style.flex = '0 0 60%'; wrap.style.minWidth = '0'; }
+  if (wrap) { wrap.style.flex = '0 0 70%'; wrap.style.minWidth = '0'; }
   _setVal('algos-sig-title', (algo_name || 'Signal') + ' — Check Now');
 
   const fields = ['algos-sig-name','algos-sig-instrument','algos-sig-type',
