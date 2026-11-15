@@ -398,6 +398,9 @@ tr:hover td{background:var(--surface2);}
     <div class="nav-item p02" data-s="scenarios" onclick="show('scenarios',this)">
       <span class="nav-icon">◎</span> Scenarios
     </div>
+    <div class="nav-item p02" data-s="algo-performance" onclick="show('algo-performance',this)">
+      <span class="nav-icon">📊</span> Algo Performance
+    </div>
   </div>
 
   <div class="nav-section">
@@ -848,6 +851,88 @@ tr:hover td{background:var(--surface2);}
           </thead>
           <tbody id="algos-recent-tbody">
             <tr><td colspan="5" class="empty-row">Select an algo above to view signals</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════ ALGO PERFORMANCE ════════════════ -->
+<section class="section" id="sec-algo-performance">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Algo Performance</div>
+      <div class="page-sub">Cross-strategy overview — compare win rate, total points, profit factor and signal rate across all registered algo strategies</div>
+    </div>
+    <div class="hdr-actions">
+      <span style="font-size:11px;color:var(--t3);align-self:center">Updated: <span id="algoperf-updated">—</span></span>
+      <button class="btn btn-ghost btn-sm" onclick="loadAlgoPerformance()">↺ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Aggregate KPI tiles (5) -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px">
+    <div class="card">
+      <div class="kpi-label">Total Algos</div>
+      <div class="kpi-value" id="algoperf-total-algos">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Live Algos</div>
+      <div class="kpi-value ok" id="algoperf-live-count">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Avg Win Rate</div>
+      <div class="kpi-value neu" id="algoperf-avg-win-rate">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Best Algo</div>
+      <div class="kpi-value" id="algoperf-best-algo" style="font-size:13px">—</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Total Signals</div>
+      <div class="kpi-value" id="algoperf-total-signals">—</div>
+    </div>
+  </div>
+
+  <!-- Algo scorecards -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Strategy Scorecards</span>
+      <span class="card-sub">Win Rate · Total Pts · Profit Factor · Signal Rate · Trades</span>
+    </div>
+    <div class="agp-sc-grid" id="algoperf-scorecards">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Win-rate bar chart + detail table in one row -->
+  <div style="display:grid;grid-template-columns:2fr 3fr;gap:14px;align-items:start">
+    <div class="chart-wrap" style="margin-bottom:0">
+      <div class="chart-title">Win Rate by Strategy (%)</div>
+      <div class="chart-box" style="height:320px"><canvas id="algoperf-chart" height="220"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hdr"><span class="card-title">Strategy Detail</span></div>
+      <div class="tbl-wrap" style="max-height:320px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>Type</th>
+              <th>Instrument</th>
+              <th>Status</th>
+              <th style="text-align:right">Win Rate</th>
+              <th style="text-align:right">Total Pts</th>
+              <th style="text-align:right">Profit Factor</th>
+              <th style="text-align:right">Signal Rate</th>
+              <th style="text-align:right">Trades</th>
+            </tr>
+          </thead>
+          <tbody id="algoperf-table">
+            <tr><td colspan="9" class="empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>

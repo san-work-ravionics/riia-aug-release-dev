@@ -33,6 +33,7 @@ import { loadAgentPerformance, setAgentPerfPeriod, loadAgentPerfTimeline, loadRL
 import { loadModelEval, meSelectInstrument, meSelectRow, meSortTable } from './model-eval.js';
 import { loadPortfolioBuilder, pbToggleInstrument, pbSelectAllRegion, pbClearAllRegion, pbSortTable, pbApplyGoalPreset, pbToggleDraftItem, pbBuildFromDraft, pbClearBasket, pbBuildPortfolio, pbSetAlloc } from './portfolio-builder.js?v=6';
 import { loadAlgos, algoRegisterToggle, algoSubmitRegister, algoSetLive, algoPause, algoDelete, algoShowPerf } from './algos.js';
+import { loadAlgoPerformance } from './algo-performance.js';
 
 // ── Populate section loaders map ───────────────────────────
 _sectionLoaders.market            = async () => { refreshChatChips(); clearChat(); runMarket(); const data = await warmupChat(); if (data) { updateChips(data.chips); showAlerts(data.alerts); } };
@@ -55,6 +56,7 @@ _sectionLoaders['portfolio-builder']   = loadPortfolioBuilder;
 _sectionLoaders['agent-performance']   = loadAgentPerformance;
 _sectionLoaders['model-eval']          = loadModelEval;
 _sectionLoaders['algos']               = loadAlgos;
+_sectionLoaders['algo-performance']    = loadAlgoPerformance;
 
 // ── Expose to window for inline HTML onclick attributes ────
 window.show                = show;
@@ -109,6 +111,7 @@ window.meSelectInstrument = meSelectInstrument;
 window.meSelectRow = meSelectRow;
 window.meSortTable = meSortTable;
 window.loadAlgos          = loadAlgos;
+window.loadAlgoPerformance = loadAlgoPerformance;
 window.algoRegisterToggle = algoRegisterToggle;
 window.algoSubmitRegister = algoSubmitRegister;
 window.algoSetLive        = algoSetLive;

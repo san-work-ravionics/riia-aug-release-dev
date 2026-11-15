@@ -2834,3 +2834,179 @@ def algo_performance(
     else:
         # Custom or unknown: return empty
         return AlgoPerformanceOut(kpis=AlgoKpisOut()).model_dump(mode="json")
+
+
+# ── GET /api/v1/experience/rita/algos/performance ─────────────────────────────
+
+@router.get("/experience/rita/algos/performance",
+            summary="Cross-strategy Algo Performance overview (Experience tier)")
+def algos_performance(
+    instrument: str | None = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return aggregate KPIs and per-algo summaries for all registered algos.
+
+    Optionally filter to a single instrument via ?instrument=NIFTY.
+    For asta_setup algos: KPIs computed from asta_labeled_dataset.csv.
+    For ddqn algos: KPIs derived from training_runs (trade-level KPIs are null).
+    Experience tier — read-only, no DB writes, no db.commit().
+    """
+    import math
+    import pandas as pd
+    from pathlib import Path
+
+    from rita.config import get_settings as _gs
+    from rita.repositories.algo_repository import AlgoRepository
+    from rita.schemas.algo import AlgoPerfSummaryItem, AlgosPerformanceListResponse
+
+    repo = AlgoRepository(db)
+    all_algos = repo.get_all_active()
+
+    if instrument:
+        all_algos = [a for a in all_algos if a.instrument.upper() == instrument.upper()]
+
+    items: list[AlgoPerfSummaryItem] = []
+
+    for algo in all_algos:
+        win_rate: float | None = None
+        total_pts: float | None = None
+        profit_factor: float | None = None
+        signal_rate: float | None = None
+        num_trades: int | None = None
+
+        if algo.algo_type == "asta_setup":
+            try:
+                _settings = _gs()
+                inst = algo.instrument.upper()
+                csv_path = Path(_settings.data.input_dir) / inst / "asta_labeled_dataset.csv"
+                if csv_path.exists():
+                    df = pd.read_csv(str(csv_path), index_col=0, parse_dates=True)
+                    setup_df = df[df["asta_setup"] == algo.setup_key].copy() if algo.setup_key else df.iloc[0:0]
+                    if not setup_df.empty:
+                        total_rows = len(df)
+                        active_signals = len(setup_df)
+                        MAX_HOLD = 20
+                        highs = df["High"].values
+                        lows = df["Low"].values
+                        n = len(df)
+                        outcomes_map: dict[int, str] = {}
+                        pts_map: dict[int, float] = {}
+                        for idx in setup_df.index:
+                            pos = df.index.get_loc(idx)
+                            sig = df.at[idx, "asta_signal"]
+                            sl_val = df.at[idx, "asta_stop_loss"]
+                            tgt_val = df.at[idx, "asta_target"]
+                            close_val = df.at[idx, "Close"]
+                            try:
+                                sl = float(sl_val)
+                                tgt = float(tgt_val)
+                                close = float(close_val)
+                            except (TypeError, ValueError):
+                                outcomes_map[pos] = "open"
+                                pts_map[pos] = 0.0
+                                continue
+                            if math.isnan(sl) or math.isnan(tgt) or math.isnan(close) or sl == 0 or tgt == 0:
+                                outcomes_map[pos] = "open"
+                                pts_map[pos] = 0.0
+                                continue
+                            outcome = "open"
+                            pts = 0.0
+                            for j in range(pos + 1, min(pos + 1 + MAX_HOLD, n)):
+                                if sig == "BUY":
+                                    if lows[j] <= sl:
+                                        outcome = "stopped"
+                                        pts = sl - close
+                                        break
+                                    if highs[j] >= tgt:
+                                        outcome = "target"
+                                        pts = tgt - close
+                                        break
+                                else:
+                                    if highs[j] >= sl:
+                                        outcome = "stopped"
+                                        pts = close - sl
+                                        break
+                                    if lows[j] <= tgt:
+                                        outcome = "target"
+                                        pts = close - tgt
+                                        break
+                            outcomes_map[pos] = outcome
+                            pts_map[pos] = round(pts, 2)
+                        setup_df = setup_df.copy()
+                        setup_df["_outcome"] = [outcomes_map.get(df.index.get_loc(i), "open") for i in setup_df.index]
+                        setup_df["_pts"] = [pts_map.get(df.index.get_loc(i), 0.0) for i in setup_df.index]
+                        resolved = setup_df[setup_df["_outcome"] != "open"]
+                        target_hit = resolved[resolved["_outcome"] == "target"]
+                        stopped_out = resolved[resolved["_outcome"] == "stopped"]
+                        if len(resolved) > 0:
+                            win_rate = round(len(target_hit) / len(resolved) * 100, 2)
+                            total_pts = round(float(resolved["_pts"].sum()), 2)
+                            num_trades = len(resolved)
+                            gross_win = float(target_hit["_pts"].sum()) if len(target_hit) > 0 else None
+                            gross_loss = float(stopped_out["_pts"].sum()) if len(stopped_out) > 0 else None
+                            if gross_win is not None and gross_loss is not None and abs(gross_loss) > 0:
+                                profit_factor = round(gross_win / abs(gross_loss), 3)
+                        if total_rows > 0:
+                            signal_rate = round(active_signals / total_rows * 100, 2)
+            except Exception:
+                pass  # Skip KPI computation on any CSV error; still include the algo row
+
+        elif algo.algo_type == "ddqn":
+            # DDQN: trade-level KPIs (win_rate, profit_factor) are null — not available
+            # Only signal_rate can be approximated from training_runs; total_pts from backtest_return
+            try:
+                from rita.repositories.training import TrainingRunsRepository
+
+                inst = algo.instrument.upper()
+                all_runs = TrainingRunsRepository(db).read_all()
+                inst_runs = [r for r in all_runs
+                             if r.instrument and r.instrument.upper() == inst
+                             and r.status in ("complete", "completed")]
+                if inst_runs:
+                    latest = max(inst_runs, key=lambda r: r.recorded_at or r.started_at)
+                    if latest.backtest_return is not None:
+                        total_pts = round(float(latest.backtest_return) * 100, 2)
+                    if latest.backtest_trades is not None:
+                        num_trades = int(latest.backtest_trades)
+                # win_rate and profit_factor remain null for DDQN
+            except Exception:
+                pass
+
+        items.append(AlgoPerfSummaryItem(
+            algo_id=algo.algo_id,
+            name=algo.name,
+            algo_type=algo.algo_type,
+            instrument=algo.instrument,
+            status=algo.status,
+            win_rate=win_rate,
+            total_pts=total_pts,
+            profit_factor=profit_factor,
+            signal_rate=signal_rate,
+            num_trades=num_trades,
+        ))
+
+    total_algos = len(items)
+    live_algos = sum(1 for a in all_algos if a.status == "live")
+
+    # Aggregate: avg win rate across algos that have it
+    win_rates = [i.win_rate for i in items if i.win_rate is not None]
+    avg_win_rate = round(sum(win_rates) / len(win_rates), 2) if win_rates else None
+
+    # Best algo by win rate
+    best_algo_name: str | None = None
+    ranked = [i for i in items if i.win_rate is not None]
+    if ranked:
+        best = max(ranked, key=lambda i: i.win_rate)  # type: ignore[arg-type]
+        best_algo_name = best.name
+
+    # total_signals = sum of num_trades (closest available proxy for total signal count)
+    total_signals = sum(i.num_trades for i in items if i.num_trades is not None)
+
+    return AlgosPerformanceListResponse(
+        total_algos=total_algos,
+        live_algos=live_algos,
+        avg_win_rate=avg_win_rate,
+        best_algo_name=best_algo_name,
+        total_signals=total_signals,
+        algos=items,
+    ).model_dump(mode="json")

@@ -68,3 +68,31 @@ class AlgoPerformanceOut(BaseModel):
     equity_curve: list[dict] = []
     signal_markers: list[dict] = []
     recent_signals: list[dict] = []
+
+
+# ── F47 — Algo Performance page (cross-strategy overview) ─────────────────────
+
+class AlgoPerfSummaryItem(BaseModel):
+    """Per-algo summary row for the Algo Performance cross-strategy overview."""
+
+    algo_id: str
+    name: str
+    algo_type: str
+    instrument: str
+    status: str
+    win_rate: float | None = None
+    total_pts: float | None = None
+    profit_factor: float | None = None
+    signal_rate: float | None = None
+    num_trades: int | None = None
+
+
+class AlgosPerformanceListResponse(BaseModel):
+    """Aggregate response for GET /api/v1/experience/rita/algos/performance."""
+
+    total_algos: int
+    live_algos: int
+    avg_win_rate: float | None = None
+    best_algo_name: str | None = None
+    total_signals: int
+    algos: list[AlgoPerfSummaryItem] = []
