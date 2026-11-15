@@ -359,8 +359,10 @@ export async function algoShowPerf(algo_id, algo_name) {
 
 export async function algoCheckNow(algo_id, algo_name) {
   const panel = document.getElementById('algos-signal-panel');
+  const wrap  = document.getElementById('algos-registry-wrap');
   if (!panel) return;
   panel.style.display = 'block';
+  if (wrap) { wrap.style.flex = '0 0 60%'; wrap.style.minWidth = '0'; }
   _setVal('algos-sig-title', (algo_name || 'Signal') + ' — Check Now');
 
   const fields = ['algos-sig-name','algos-sig-instrument','algos-sig-type',
@@ -394,7 +396,9 @@ export async function algoCheckNow(algo_id, algo_name) {
 
 export function algoCloseSignal() {
   const panel = document.getElementById('algos-signal-panel');
+  const wrap  = document.getElementById('algos-registry-wrap');
   if (panel) panel.style.display = 'none';
+  if (wrap) { wrap.style.flex = '1'; wrap.style.minWidth = '0'; }
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
