@@ -41,7 +41,7 @@ def test_f44_p4_contract_fixture_validates():
     for key, model in MODELS.items():
         assert model.model_validate(data[key]).model_dump(mode="json") == data[key], key
     adapter = TypeAdapter(CardOut)
-    assert set(data["cards"]) == set(CARD_KINDS) and len(CARD_KINDS) == 5     # goal, hedge, 3 bucket cards
+    assert set(data["cards"]) == set(CARD_KINDS) and len(CARD_KINDS) == 6     # goal, hedge, 3 bucket cards + algo
     for kind, card in data["cards"].items():
         assert adapter.validate_python(card).kind == kind
 

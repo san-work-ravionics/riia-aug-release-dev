@@ -27,7 +27,7 @@ def test_seed_set_shape():
     assert set(ji.INTENT_NAMES) == {"take_goal", "build_selection", "why_this_pick", "cant_reach", "track",
                                     "progress", "what_if_sl", "show_hedge", "change_goal", "confirm",
                                     "decline", "help", "wn_on_track", "wn_bucket_status", "wn_hedge_signal",
-                                    "wn_what_needs_hedging", "show_algo_performance"}
+                                    "wn_what_needs_hedging", "algo_status"}
     assert all(len(v) >= 8 for v in ji.JOURNEY_INTENTS.values())
 
 
