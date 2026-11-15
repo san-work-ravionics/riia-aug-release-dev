@@ -7,7 +7,8 @@
 // ensureDevToken(true) → one retry). The only window binding is closeChartModal (modal markup).
 import { ensureDevToken } from '../shared/dev-auth.js';
 import { closeChartModal } from '../rita/chart-modal.js';
-import { t } from './copy.js?v=21';
+import { t } from './copy.js?v=22';
+import { loadAlgos, initAlgos } from './algos.js?v=1';
 import {
   warmup, openSession, sendMessage, loadState, initChat, renderHistory, renderChips, appendBubble,
   initGroups, initVoice, speakReply, renderHighlights,
@@ -107,12 +108,20 @@ function showRegionView(loc) {
 
 // ── tabs ───────────────────────────────────────────────────────────────────────
 function showTab(tab) {
+  // Reset algos split when leaving the algos tab
+  if (S.tab === 'algos' && tab !== 'algos') {
+    const wrap = _byId('jv-algos-table-wrap');
+    const panel = _byId('jv-algos-signal-panel');
+    if (wrap) wrap.style.width = '';
+    if (panel) { panel.hidden = true; panel.style.width = ''; }
+  }
   S.tab = tab;
   _byId('jv-tab-chat')?.classList.toggle('is-active', tab === 'chat');
   _byId('jv-tab-portfolio')?.classList.toggle('is-active', tab === 'portfolio');
   _byId('jv-tab-concepts')?.classList.toggle('is-active', tab === 'concepts');
   _byId('jv-tab-whatineed')?.classList.toggle('is-active', tab === 'whatineed');
-  for (const v of ['chat', 'portfolio', 'concepts', 'whatineed']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
+  _byId('jv-tab-algos')?.classList.toggle('is-active', tab === 'algos');
+  for (const v of ['chat', 'portfolio', 'concepts', 'whatineed', 'algos']) { const el = _byId(`jv-view-${v}`); if (el) el.hidden = tab !== v; }
   if (tab === 'portfolio') {
     showAllRegions();                                                // reset to overview; clicking a loc drills in
     if (_pfNeedsLoad()) loadPortfolioSection();
@@ -123,6 +132,7 @@ function showTab(tab) {
   }
   if (tab === 'concepts') loadConceptsSection();
   if (tab === 'whatineed') loadWhatINeed();
+  if (tab === 'algos') loadAlgos();
 }
 
 function initTabs() {
@@ -144,6 +154,7 @@ function initTabs() {
   _byId('jv-tab-portfolio')?.addEventListener('click', () => showTab('portfolio'));
   _byId('jv-tab-concepts')?.addEventListener('click', () => showTab('concepts'));
   _byId('jv-tab-whatineed')?.addEventListener('click', () => showTab('whatineed'));
+  _byId('jv-tab-algos')?.addEventListener('click', () => showTab('algos'));
   _byId('jv-region-back')?.addEventListener('click', showAllRegions);  // breadcrumb back → overview
   // Delegated: "Show details" button → change location; card body → toggle scatter/table filter.
   _byId('sec-jv-locations')?.addEventListener('click', e => {
@@ -461,6 +472,7 @@ async function boot() {
   initInstrument();
   initConcepts();
   initWhatINeed();
+  initAlgos();
   initRegionPeriod();
   showTab('chat');
   await ensureDevToken();                                           // localhost: dev token (prod: login gate)

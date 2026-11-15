@@ -3010,3 +3010,172 @@ def algos_performance(
         total_signals=total_signals,
         algos=items,
     ).model_dump(mode="json")
+
+
+# ── GET /api/v1/experience/rita/algos/{algo_id}/signal ─────────────────────────
+
+@router.get("/experience/rita/algos/{algo_id}/signal",
+            summary="Check current signal for a registered algo (Experience tier)")
+def algo_check_now(
+    algo_id: str,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return the current trading signal for a registered algo.
+
+    For asta_setup algos: reads last row of asta_labeled_dataset.csv filtered by setup_key.
+    For ddqn algos: loads latest model zip and runs run_policy() at 'medium' tolerance
+    to get today_action and allocation.
+    Best-effort fetch_kite_quote for live LTP (kite_ltp=null on failure).
+    Experience tier — read-only, no DB writes, no db.commit().
+    Never raises 500 for missing data; returns AlgoSignalOut with null fields instead.
+    """
+    import math
+    import pandas as pd
+    from pathlib import Path
+    from fastapi import HTTPException
+
+    from rita.repositories.algo_repository import AlgoRepository
+    from rita.schemas.algo import AlgoSignalOut
+    from rita.services.kite_middleware_client import fetch_kite_quote
+
+    repo = AlgoRepository(db)
+    algo = repo.find_by_id(algo_id)
+    if algo is None:
+        raise HTTPException(status_code=404, detail=f"Algo '{algo_id}' not found")
+
+    signal: str | None = None
+    target: float | None = None
+    stop_loss: float | None = None
+    confidence: float | None = None
+    action: str | None = None
+    allocation_pct: float | None = None
+    close: float | None = None
+    as_of: str | None = None
+    message: str = ""
+
+    if algo.algo_type == "asta_setup":
+        try:
+            from rita.config import get_settings as _gs
+            _settings = _gs()
+            inst = algo.instrument.upper()
+            csv_path = Path(_settings.data.input_dir) / inst / "asta_labeled_dataset.csv"
+            if not csv_path.exists():
+                message = f"No asta_labeled_dataset.csv for {inst}"
+            else:
+                df = pd.read_csv(str(csv_path), index_col=0, parse_dates=True)
+                setup_df = df[df["asta_setup"] == algo.setup_key] if algo.setup_key else df
+                if setup_df.empty:
+                    message = "No signals for this setup key"
+                else:
+                    last_row = setup_df.iloc[-1]
+                    raw_sig = last_row.get("asta_signal")
+                    signal = str(raw_sig) if raw_sig is not None else None
+                    if signal in (None, "nan", ""):
+                        signal = None
+                    tgt_v = last_row.get("asta_target")
+                    sl_v = last_row.get("asta_stop_loss")
+                    close_v = last_row.get("Close")
+                    conf_v = last_row.get("asta_confidence")
+                    try:
+                        fv = float(tgt_v)
+                        target = round(fv, 2) if not math.isnan(fv) else None
+                    except (TypeError, ValueError):
+                        pass
+                    try:
+                        fv = float(sl_v)
+                        stop_loss = round(fv, 2) if not math.isnan(fv) else None
+                    except (TypeError, ValueError):
+                        pass
+                    try:
+                        fv = float(close_v)
+                        close = round(fv, 2) if not math.isnan(fv) else None
+                    except (TypeError, ValueError):
+                        pass
+                    try:
+                        cv = float(conf_v)
+                        confidence = round(cv, 4) if not math.isnan(cv) else None
+                    except (TypeError, ValueError):
+                        pass
+                    try:
+                        as_of = str(setup_df.index[-1].date())
+                    except Exception:
+                        pass
+                    message = f"ASTA signal: {signal or 'none'} as of {as_of or 'unknown'}"
+        except Exception as exc:
+            message = f"Could not compute ASTA signal: {type(exc).__name__}"
+
+    elif algo.algo_type == "ddqn":
+        try:
+            from rita.config import get_settings as _gs
+            from rita.repositories.model_artifact import ModelArtifactRepository
+            from rita.core.goal_model_runs import run_policy, ACTION_ALLOCATION
+            from rita.core.instrument_config import load_instrument_env_config
+
+            inst = algo.instrument.upper()
+            artifact_repo = ModelArtifactRepository.from_settings()
+            _settings = _gs()
+            lineages = _settings.goal_selection.model_lineages
+            if not lineages:
+                message = "No model lineages configured"
+            else:
+                lineage = lineages[0]
+                path = artifact_repo.find(inst, lineage)
+                if path is None:
+                    message = f"No model found for {inst}"
+                else:
+                    model = artifact_repo.load(path)
+                    frame = artifact_repo.load_indicator_frame(inst)
+                    if frame is None:
+                        message = f"No indicator data for {inst}"
+                    else:
+                        df = frame.df
+                        split = artifact_repo.split_for(lineage, inst, path, df.index)
+                        env_cfg = load_instrument_env_config(inst)
+                        sha = artifact_repo.sha256(path)
+                        run = run_policy(model, df, env_cfg, split, "medium",
+                                         instrument=inst, lineage=lineage.name,
+                                         model_sha12=sha[:12])
+                        action = run.today_action
+                        allocation_pct = ACTION_ALLOCATION.get(action, 0.0) * 100
+                        try:
+                            as_of = str(run.as_of)
+                        except Exception:
+                            pass
+                        try:
+                            close = round(float(df["Close"].iloc[-1]), 2)
+                        except Exception:
+                            pass
+                        message = f"DDQN action: {action} as of {as_of or 'unknown'}"
+        except Exception as exc:
+            message = f"Could not compute DDQN signal: {type(exc).__name__}"
+
+    else:
+        message = f"Signal check not supported for algo type '{algo.algo_type}'"
+
+    # Best-effort Kite LTP — never raises
+    kite_ltp: float | None = None
+    try:
+        q = fetch_kite_quote(algo.instrument)
+        if q is not None:
+            raw_ltp = q.get("ltp")
+            if raw_ltp is not None:
+                kite_ltp = float(raw_ltp)
+    except Exception:
+        pass
+
+    return AlgoSignalOut(
+        algo_id=algo.algo_id,
+        name=algo.name,
+        algo_type=algo.algo_type,
+        instrument=algo.instrument,
+        signal=signal,
+        target=target,
+        stop_loss=stop_loss,
+        confidence=confidence,
+        action=action,
+        allocation_pct=allocation_pct,
+        close=close,
+        kite_ltp=kite_ltp,
+        as_of=as_of,
+        message=message,
+    ).model_dump(mode="json")

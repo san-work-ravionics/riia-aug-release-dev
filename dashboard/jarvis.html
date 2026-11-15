@@ -437,6 +437,7 @@ canvas{display:block;}
       <button type="button" class="nav-item nav-sub-item p00" data-loc="us"><span class="nav-icon">🇺🇸</span><span data-copy="loc.us"></span></button>
     </div>
     <button type="button" class="nav-item p00" id="jv-tab-concepts"><span class="nav-icon">◎</span><span data-copy="tab.concepts"></span></button>
+    <button type="button" class="nav-item p00" id="jv-tab-algos"><span class="nav-icon">⊗</span><span data-copy="tab.algos"></span></button>
   </div>
 </nav>
 
@@ -757,6 +758,60 @@ canvas{display:block;}
         <summary data-copy="wn.details.title"></summary>
         <div id="jv-wn-details-body"></div>
       </details>
+    </div>
+  </div>
+
+  <!-- ════════════════ ALGOS (F48) ════════════════ -->
+  <div id="jv-view-algos" hidden>
+    <div class="page-hdr">
+      <div>
+        <div class="page-title" data-copy="tab.algos"></div>
+      </div>
+    </div>
+    <div id="jv-algos-mutation-error" hidden style="color:var(--danger);font-size:12px;margin-bottom:8px;"></div>
+    <div id="jv-algos-loading" hidden style="font-size:13px;color:var(--t3);margin-bottom:8px;" data-copy="algos.loading"></div>
+    <div id="jv-algos-error" hidden style="color:var(--danger);font-size:13px;margin-bottom:8px;"></div>
+    <div id="jv-algos-empty" hidden style="font-size:13px;color:var(--t3);margin-bottom:8px;" data-copy="algos.empty"></div>
+    <div style="display:flex;gap:8px;align-items:flex-start;min-height:300px;">
+      <!-- 40% table, grows to 100% when signal panel is hidden -->
+      <div id="jv-algos-table-wrap" hidden style="flex:1;overflow-x:auto;transition:width 0.2s;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);font-size:11px;color:var(--t3);text-align:left;">
+              <th style="padding:4px 8px">Name</th>
+              <th style="padding:4px 8px">Instrument</th>
+              <th style="padding:4px 8px">Type</th>
+              <th style="padding:4px 8px">Setup key</th>
+              <th style="padding:4px 8px">Status</th>
+              <th style="padding:4px 8px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jv-algos-tbody"></tbody>
+        </table>
+      </div>
+      <!-- 60% signal panel, hidden until Check Now is clicked -->
+      <div id="jv-algos-signal-panel" hidden style="flex:1;padding:12px 16px;background:var(--surface-2,var(--surface));border-radius:var(--r);border:1px solid var(--border);font-size:13px;position:relative;transition:width 0.2s;">
+        <button id="jv-sig-dismiss" style="position:absolute;top:8px;right:12px;background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3);line-height:1;" data-copy="algos.signal.close"></button>
+        <div id="jv-sig-loading" hidden style="color:var(--t3);margin-bottom:8px;"></div>
+        <div id="jv-sig-error" hidden style="color:var(--danger);margin-bottom:8px;"></div>
+        <table style="width:100%;border-collapse:collapse;">
+          <tbody>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px;width:40%">Name</td><td id="jv-sig-name" style="padding:3px 6px;font-weight:600"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Instrument</td><td id="jv-sig-instrument" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Type</td><td id="jv-sig-type" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Signal</td><td id="jv-sig-signal" style="padding:3px 6px;font-weight:600"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Target</td><td id="jv-sig-target" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Stop loss</td><td id="jv-sig-stop-loss" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Confidence</td><td id="jv-sig-confidence" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Action</td><td id="jv-sig-action" style="padding:3px 6px;font-weight:600"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Allocation</td><td id="jv-sig-allocation" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Live LTP</td><td id="jv-sig-ltp" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Last close</td><td id="jv-sig-close" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">As of</td><td id="jv-sig-as-of" style="padding:3px 6px"></td></tr>
+            <tr><td style="padding:3px 6px;color:var(--t3);font-size:11px">Message</td><td id="jv-sig-message" style="padding:3px 6px;font-style:italic;color:var(--t2)"></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 

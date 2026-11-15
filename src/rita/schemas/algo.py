@@ -96,3 +96,27 @@ class AlgosPerformanceListResponse(BaseModel):
     best_algo_name: str | None = None
     total_signals: int
     algos: list[AlgoPerfSummaryItem] = []
+
+
+# ── F48 — Algo Check Now (live signal check) ──────────────────────────────────
+
+class AlgoSignalOut(BaseModel):
+    """Response for GET /experience/rita/algos/{algo_id}/signal (F48)."""
+
+    algo_id: str
+    name: str
+    algo_type: str            # "asta_setup" | "ddqn" | "custom"
+    instrument: str
+    # ASTA fields
+    signal: str | None = None         # "BUY" | "SELL" | None
+    target: float | None = None       # target price
+    stop_loss: float | None = None    # stop-loss price
+    confidence: float | None = None   # 0.0–1.0
+    # DDQN fields
+    action: str | None = None         # "cash" | "half" | "full" | "hedged"
+    allocation_pct: float | None = None  # 0 / 50 / 100
+    # Shared
+    close: float | None = None        # last bar close
+    kite_ltp: float | None = None     # live Kite LTP — best-effort, None if Kite offline
+    as_of: str | None = None          # ISO date of last bar checked
+    message: str = ""                 # one-line summary
