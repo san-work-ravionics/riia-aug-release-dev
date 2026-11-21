@@ -46,7 +46,9 @@ def _price_from_fwd_returns(fwd_returns):
         base = closes[-1]
         closes += [base] * (_H - 1)        # filler bars (irrelevant to non-overlapping rows)
         closes.append(base * (1.0 + f))
-    idx = pd.bdate_range(end=pd.Timestamp.today().normalize(), periods=len(closes))
+    # Roll a weekend "today" back to Friday: bdate_range(end=<Sat/Sun>, periods=n) returns n-1 dates.
+    end = pd.offsets.BDay().rollback(pd.Timestamp.today().normalize())
+    idx = pd.bdate_range(end=end, periods=len(closes))
     df = pd.DataFrame({"Close": closes}, index=idx)
     dates = [idx[k * _H].to_pydatetime() for k in range(len(fwd_returns))]
     return df, dates
