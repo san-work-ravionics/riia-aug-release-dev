@@ -20,6 +20,10 @@ riia-aug-release/config/staging.yaml
 *secret*
 *token*
 !*token_budget*
+# Source files that only mention "token" in their name (no secrets). Keep these explicit:
+# a broad negation here could let a real token file slip into git.
+!riia-aug-release/src/rita/schemas/token_forecast.py
+!riia-aug-release/alembic/versions/a3f9c1e82b5d_add_actual_tokens_total.py
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
