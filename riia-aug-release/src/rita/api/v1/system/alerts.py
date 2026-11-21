@@ -18,6 +18,11 @@ def list_all(repo: AlertsRepository = Depends(get_repo)):
     return repo.read_all()
 
 
+@router.get("/count", summary="Number of alerts", tags=["system:alerts"])
+def get_count(repo: AlertsRepository = Depends(get_repo)) -> dict[str, int]:
+    return {"count": len(repo.read_all())}
+
+
 @router.get("/{id}", response_model=Alert)
 def get_one(id: str, repo: AlertsRepository = Depends(get_repo)):
     record = repo.find_by_id(id)

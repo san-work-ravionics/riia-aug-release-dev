@@ -55,7 +55,7 @@ Tier 3: Experience     src/rita/api/experience/        UI-shaped read-only aggre
 | `system/orders.py` | `/api/v1/orders` | `orders` |
 | `system/snapshots.py` | `/api/v1/snapshots` | `snapshots` |
 | `system/trades.py` | `/api/v1/trades` | `trades` |
-| `system/alerts.py` | `/api/v1/alerts` | `alerts` |
+| `system/alerts.py` | `/api/v1/alerts` (incl. `GET /count` → `{"count": N}`) | `alerts` |
 | `system/audit.py` | `/api/v1/audit` | `audit_log` |
 | `system/market_data.py` | `/api/v1/market-data` | `market_data_cache` |
 | `system/config_overrides.py` | `/api/v1/config-overrides` | `config_overrides` |
