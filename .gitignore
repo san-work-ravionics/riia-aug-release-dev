@@ -1,4 +1,22 @@
-# Python
+# ── Secrets and credentials ──────────────────────────────────────────────────
+git-key.txt
+*git-key*
+*.key
+*.pfx
+confluence-api-key.txt
+aws-creds.txt
+
+# ── API keys and tokens ───────────────────────────────────────────────────────
+*api-key*
+*api_key*
+*secret*
+*token*
+!*token_budget*
+# Source files that mention "token" in their name but contain no secrets:
+!src/rita/schemas/token_forecast.py
+!alembic/versions/a3f9c1e82b5d_add_actual_tokens_total.py
+
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
@@ -14,9 +32,9 @@ htmlcov/
 
 # Environment & secrets
 .env
+.env.*
+!.env.example
 *.env
-confluence-api-key.txt
-aws-creds.txt
 
 # Terraform
 terraform/.terraform/
@@ -25,6 +43,7 @@ terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/terraform.tfvars
 terraform/generated-key.pem
+*.pem
 
 # SQLite DB (lives in rita_output — not source)
 *.db
