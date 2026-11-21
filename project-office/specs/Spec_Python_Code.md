@@ -42,7 +42,7 @@ Pure CRUD — **one repository per router, zero business logic, no cross-table r
 | `orders.py` | `/api/v1/orders` | CRUD |
 | `snapshots.py` | `/api/v1/snapshots` | CRUD |
 | `trades.py` | `/api/v1/trades` | CRUD |
-| `alerts.py` | `/api/v1/alerts` | CRUD |
+| `alerts.py` | `/api/v1/alerts` | CRUD, plus `GET /count` → `{"count": N}` (number of alert rows) |
 | `audit.py` | `/api/v1/audit` | GET list, POST create |
 | `market_data.py` | `/api/v1/market-data` | CRUD |
 | `config_overrides.py` | `/api/v1/config-overrides` | CRUD |
