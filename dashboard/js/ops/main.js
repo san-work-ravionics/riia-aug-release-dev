@@ -4,7 +4,7 @@ import { loadOverview } from './overview.js';
 import { loadMonitoring } from './monitoring.js';
 import { loadDeploy } from './deploy.js';
 import { loadObservability } from './observability.js';
-import { loadArchitecture, selectArchNode } from './architecture.js';
+import { loadArchitecture, selectArchContainer } from './architecture.js';
 import { loadChat } from './chat.js';
 import { loadDailyOps, triggerSnapshot, loadInstruments, toggleInstrument, saveInstruments, searchInstrument, onboardInstrument } from './daily-ops.js';
 import { loadRisk } from './risk.js';
@@ -59,7 +59,7 @@ window.runFullPipeline        = runFullPipeline;
 window.doReset                = doReset;
 window.filterApiMetrics       = filterApiMetrics;
 window.setLanguage            = setLanguage;
-window.selectArchNode         = selectArchNode;
+window.selectArchContainer    = selectArchContainer;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();

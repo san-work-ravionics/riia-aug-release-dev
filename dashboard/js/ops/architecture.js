@@ -1,8 +1,8 @@
-// ── Architecture Map (groma C4 viewer) ───────────────────────────────────────
+// ── Architecture Map (groma C4 diagram view) ─────────────────────────────────
 import { apiFetch } from './api.js';
 
-let _d = null;        // full architecture JSON
-let _selKey = null;   // 'con:<id>' | 'comp:<id>' | 'context'
+let _d = null;
+let _selConId = null;
 
 export async function loadArchitecture() {
   const wrap = document.getElementById('arch-wrap');
@@ -13,192 +13,131 @@ export async function loadArchitecture() {
     wrap.innerHTML = '<div class="empty">Architecture data unavailable — groma/ folder missing or empty.</div>';
     return;
   }
-
-  _render();
-  _selectNode('context');
+  _renderDiagram();
 }
 
-function _render() {
+function _renderDiagram() {
   const wrap = document.getElementById('arch-wrap');
   const sys = _d.systems[0];
-  const compCount = sys.containers.reduce((s, c) => s + c.components.length, 0);
+
+  const actorCards = (_d.actors || []).map(a => `
+    <div class="ac-person">
+      <svg class="ac-person-ic" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div class="ac-person-name">${_esc(a.title)}</div>
+      <div class="ac-person-desc">${_esc(a.description)}</div>
+    </div>`).join('');
+
+  const conCards = sys.containers.map(con => `
+    <div class="ac-con" data-con-id="${con.id}" onclick="selectArchContainer('${con.id}')">
+      <div class="ac-con-name">${_esc(con.title)}</div>
+      ${con.technology ? `<div class="ac-con-tech">${_esc(con.technology)}</div>` : ''}
+      <div class="ac-con-desc">${_esc(con.description)}</div>
+      ${con.components.length ? `<div class="ac-con-cta">${con.components.length} components ›</div>` : ''}
+    </div>`).join('');
+
+  const extCards = (_d.externals || []).map(e => `
+    <div class="ac-ext">
+      <div class="ac-ext-name">${_esc(e.title)}</div>
+      <div class="ac-ext-desc">${_esc(e.description)}</div>
+    </div>`).join('');
 
   wrap.innerHTML = `
-    <div class="arch-layout">
-      <div class="arch-tree" id="arch-tree">${_buildTree(sys)}</div>
-      <div class="arch-detail" id="arch-detail"></div>
-    </div>
-    <div class="arch-context-row" id="arch-ctx-row" style="display:none">
-      <div class="arch-ctx-title">System Context</div>
-      <div class="arch-ctx-grid" id="arch-ctx-grid"></div>
-    </div>`;
-}
+    <div class="ac-wrap">
 
-function _buildTree(sys) {
-  const conRows = sys.containers.map(con => {
-    const comps = con.components.map(comp =>
-      `<div class="arch-node arch-comp-node" data-key="comp:${comp.id}" onclick="selectArchNode('comp','${comp.id}')">${_esc(comp.title)}</div>`
-    ).join('');
-    return `
-      <div class="arch-node arch-con-node" data-key="con:${con.id}" onclick="selectArchNode('con','${con.id}')">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;margin-right:2px">
-          <rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
-        </svg>
-        <span>${_esc(con.title)}</span>
-        ${con.components.length ? `<span class="arch-cnt">${con.components.length}</span>` : ''}
+      <div class="ac-tier ac-actors-tier">
+        <div class="ac-tier-lbl">Actors</div>
+        <div class="ac-tier-items">${actorCards}</div>
       </div>
-      <div class="arch-sub" id="arch-sub-${con.id}">${comps}</div>`;
-  }).join('');
 
-  return `
-    <div class="arch-sys-hdr">${_esc(sys.title)}</div>
-    ${conRows}
-    <div class="arch-sep"></div>
-    <div class="arch-node arch-con-node" data-key="context" onclick="selectArchNode('context','')">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;margin-right:2px">
-        <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.3"/>
-      </svg>
-      <span>System Context</span>
+      <div class="ac-connector"><div class="ac-line"></div><div class="ac-arrow-head">▼</div></div>
+
+      <div class="ac-sys-boundary">
+        <div class="ac-sys-label">${_esc(sys.title)}
+          <span class="ac-sys-tag">System</span>
+        </div>
+        <div class="ac-con-grid">${conCards}</div>
+      </div>
+
+      <div class="ac-connector"><div class="ac-line"></div><div class="ac-arrow-head">▼</div></div>
+
+      <div class="ac-tier ac-ext-tier">
+        <div class="ac-tier-lbl">External Systems</div>
+        <div class="ac-tier-items">${extCards}</div>
+      </div>
+
+    </div>
+
+    <div class="ac-drill" id="ac-drill" style="display:none">
+      <div id="ac-drill-inner"></div>
     </div>`;
 }
 
-export function selectArchNode(type, id) {
-  _selectNode(type === 'context' ? 'context' : `${type}:${id}`);
-}
+export function selectArchContainer(conId) {
+  _selConId = conId;
 
-function _selectNode(key) {
-  _selKey = key;
+  document.querySelectorAll('.ac-con').forEach(el =>
+    el.classList.toggle('on', el.dataset.conId === conId)
+  );
 
-  // Update tree highlighting
-  document.querySelectorAll('#arch-tree .arch-node').forEach(el => {
-    const k = el.dataset.key;
-    el.classList.toggle('on', k === key);
-  });
-
-  // Expand/collapse sub-lists
-  document.querySelectorAll('#arch-tree .arch-sub').forEach(sub => sub.style.display = 'none');
-  if (key.startsWith('con:')) {
-    const conId = key.slice(4);
-    const sub = document.getElementById('arch-sub-' + conId);
-    if (sub) sub.style.display = 'block';
-    _renderContainerDetail(conId);
-  } else if (key.startsWith('comp:')) {
-    const compId = key.slice(5);
-    const { con, comp } = _findComp(compId);
-    if (con) {
-      const sub = document.getElementById('arch-sub-' + con.id);
-      if (sub) sub.style.display = 'block';
-    }
-    _renderComponentDetail(comp);
-  } else {
-    _renderContextDetail();
-  }
-}
-
-function _renderContainerDetail(conId) {
   const sys = _d.systems[0];
   const con = sys.containers.find(c => c.id === conId);
   if (!con) return;
 
-  const ctx = document.getElementById('arch-ctx-row');
-  if (ctx) ctx.style.display = 'none';
+  const drill = document.getElementById('ac-drill');
+  const inner = document.getElementById('ac-drill-inner');
 
-  const techHtml = con.technology ? `<div class="arch-tech">${_esc(con.technology)}</div>` : '';
-  const compRows = con.components.map(c =>
-    `<div class="arch-comp-chip" onclick="selectArchNode('comp','${c.id}')">${_esc(c.title)}</div>`
-  ).join('');
-
-  document.getElementById('arch-detail').innerHTML = `
-    <div class="arch-dl-eyebrow">Container · C4 L2</div>
-    <div class="arch-dl-title">${_esc(con.title)}</div>
-    ${techHtml}
-    <div class="arch-dl-desc">${_esc(con.description)}</div>
-    ${con.overview ? `<div class="arch-dl-body">${_escHtml(con.overview)}</div>` : ''}
-    ${con.components.length ? `
-      <div class="arch-dl-sec">Components <span class="arch-cnt-sm">${con.components.length}</span></div>
-      <div class="arch-chip-row">${compRows}</div>
-    ` : ''}`;
-}
-
-function _renderComponentDetail(comp) {
-  if (!comp) return;
-
-  const ctx = document.getElementById('arch-ctx-row');
-  if (ctx) ctx.style.display = 'none';
-
-  const techHtml = comp.technology ? `<div class="arch-tech">${_esc(comp.technology)}</div>` : '';
-  const relRows = comp.relationships?.map(r =>
-    `<tr><td>${_esc(r.source)}</td><td>→</td><td>${_esc(r.target)}</td><td class="arch-rel-desc">${_esc(r.description)}</td></tr>`
-  ).join('') || '';
-
-  document.getElementById('arch-detail').innerHTML = `
-    <div class="arch-dl-eyebrow">Component · C4 L3</div>
-    <div class="arch-dl-title">${_esc(comp.title)}</div>
-    ${techHtml}
-    <div class="arch-dl-desc">${_esc(comp.description)}</div>
-    ${comp.overview ? `<div class="arch-dl-body">${_escHtml(comp.overview)}</div>` : ''}
-    ${relRows ? `
-      <div class="arch-dl-sec">Relationships</div>
-      <div class="tbl-wrap"><table class="arch-rel-tbl"><tbody>${relRows}</tbody></table></div>
-    ` : ''}`;
-}
-
-function _renderContextDetail() {
-  const sys = _d.systems[0];
-  const ctx = document.getElementById('arch-ctx-row');
-
-  const actorCards = (_d.actors || []).map(a =>
-    `<div class="arch-ctx-card">
-      <div class="arch-ctx-card-ic actor">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 12c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      </div>
-      <div class="arch-ctx-card-name">${_esc(a.title)}</div>
-      <div class="arch-ctx-card-desc">${_esc(a.description)}</div>
-    </div>`
-  ).join('');
-
-  const extCards = (_d.externals || []).map(e =>
-    `<div class="arch-ctx-card">
-      <div class="arch-ctx-card-ic external">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 7h4M7 5v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      </div>
-      <div class="arch-ctx-card-name">${_esc(e.title)}</div>
-      <div class="arch-ctx-card-desc">${_esc(e.description)}</div>
-    </div>`
-  ).join('');
-
-  document.getElementById('arch-detail').innerHTML = `
-    <div class="arch-dl-eyebrow">System · C4 L1</div>
-    <div class="arch-dl-title">${_esc(sys.title)}</div>
-    <div class="arch-dl-desc">${_esc(sys.description)}</div>
-    ${sys.overview ? `<div class="arch-dl-body">${_escHtml(sys.overview)}</div>` : ''}
-    <div class="arch-dl-sec" style="margin-top:16px">Stats</div>
-    <div class="arch-stat-row">
-      <div class="arch-stat-box"><span>${sys.containers.length}</span><label>Containers</label></div>
-      <div class="arch-stat-box"><span>${sys.containers.reduce((s,c)=>s+c.components.length,0)}</span><label>Components</label></div>
-      <div class="arch-stat-box"><span>${(_d.externals||[]).length}</span><label>Externals</label></div>
-      <div class="arch-stat-box"><span>${(_d.actors||[]).length}</span><label>Actors</label></div>
-    </div>`;
-
-  if (ctx) {
-    ctx.style.display = 'block';
-    document.getElementById('arch-ctx-grid').innerHTML = actorCards + extCards;
+  if (!con.components.length) {
+    _renderConDetail(inner, con);
+  } else {
+    _renderCompGrid(inner, con);
   }
+
+  drill.style.display = 'block';
+  setTimeout(() => drill.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 }
 
-function _findComp(compId) {
-  for (const con of (_d.systems[0]?.containers || [])) {
-    const comp = con.components.find(c => c.id === compId);
-    if (comp) return { con, comp };
-  }
-  return { con: null, comp: null };
+function _renderConDetail(inner, con) {
+  inner.innerHTML = `
+    <div class="ac-drill-hdr">
+      <div class="ac-drill-eyebrow">Container · C4 L2</div>
+      <div class="ac-drill-title">${_esc(con.title)}</div>
+      ${con.technology ? `<div class="ac-drill-tech">${_esc(con.technology)}</div>` : ''}
+    </div>
+    <div class="ac-drill-desc">${_esc(con.description)}</div>
+    ${con.overview ? `<div class="ac-drill-body">${_esc(con.overview)}</div>` : ''}`;
+}
+
+function _renderCompGrid(inner, con) {
+  const cards = con.components.map(c => {
+    const relRows = (c.relationships || []).slice(0, 3).map(r => `
+      <div class="ac-rel-row">
+        <span class="ac-rel-src">${_esc(r.source)}</span>
+        <span class="ac-rel-arr">→</span>
+        <span class="ac-rel-tgt">${_esc(r.target)}</span>
+        <span class="ac-rel-desc">${_esc(r.description)}</span>
+      </div>`).join('');
+
+    return `
+      <div class="ac-comp">
+        <div class="ac-comp-name">${_esc(c.title)}</div>
+        <div class="ac-comp-desc">${_esc(c.description)}</div>
+        ${relRows ? `<div class="ac-rels">${relRows}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  inner.innerHTML = `
+    <div class="ac-drill-hdr">
+      <div class="ac-drill-eyebrow">Container · C4 L2</div>
+      <div class="ac-drill-title">${_esc(con.title)}</div>
+      ${con.technology ? `<div class="ac-drill-tech">${_esc(con.technology)}</div>` : ''}
+      <div class="ac-drill-cnt">${con.components.length} Components</div>
+    </div>
+    <div class="ac-comp-grid">${cards}</div>`;
 }
 
 function _esc(v) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function _escHtml(text) {
-  // Convert markdown-ish overview text to escaped HTML with line breaks
-  return _esc(text).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
 }
