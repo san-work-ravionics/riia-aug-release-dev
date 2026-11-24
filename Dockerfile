@@ -61,6 +61,7 @@ COPY dashboard/ /app/dashboard/
 COPY mobileapp/ /app/mobileapp/
 COPY ops/ /app/ops/
 COPY test-results/ /app/test-results/
+COPY groma/ /app/groma/
 
 ENV PATH="/app/venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
