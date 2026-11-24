@@ -19,6 +19,7 @@ import { loadModelObservability } from './model-observability.js';
 import { loadModelAudit } from './model-audit.js';
 import { loadConcepts, switchConceptTab } from './concepts.js';
 import { closeChartModal } from './utils.js';
+import { loadAlgoPerformance } from './algo-performance.js';
 import { initI18n, setLanguage, applyTranslations } from '../shared/i18n.js';
 import { ensureDevToken } from '../shared/dev-auth.js';
 
@@ -43,6 +44,7 @@ const _sectionLoaders = {
   'model-observability':  loadModelObservability,
   'model-audit':          loadModelAudit,
   'concepts':             loadConcepts,
+  'algo-performance':     loadAlgoPerformance,
 };
 
 // ── Section switching ─────────────────────────────────────────────────────────
@@ -71,6 +73,7 @@ window.setLanguage               = setLanguage;
 window.switchConceptTab          = switchConceptTab;
 window.loadMCP                   = loadMCP;
 window.dsPreviewRow              = dsPreviewRow;
+window.loadAlgoPerformance       = loadAlgoPerformance;
 
 // ── Keyboard escape handlers (replicate inline listeners from ds.html) ────────
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChartModal(); });

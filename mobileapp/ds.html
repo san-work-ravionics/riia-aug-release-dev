@@ -567,6 +567,82 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
       </div>
 
 
+      <div class="screen" id="s5">
+        <div class="screen-inner">
+
+          <div class="scr-hdr">
+            <div>
+              <div class="scr-eye">RITA DS Lab</div>
+              <div class="scr-title">Algos</div>
+              <div class="scr-sub" id="ds-algo-updated">—</div>
+            </div>
+            <button class="refresh-btn" onclick="loadAlgoPerformance()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-eye">Total</div>
+              <div class="kpi-val" id="ds-algo-total">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Live</div>
+              <div class="kpi-val" id="ds-algo-live">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Avg Win%</div>
+              <div class="kpi-val" id="ds-algo-avg-wr">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-eye">Best Algo</div>
+              <div class="kpi-val" id="ds-algo-best">—</div>
+            </div>
+          </div>
+
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ds)"></span>
+              Signals
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Total Signals</span>
+              <span class="stat-val" id="ds-algo-signals">—</span>
+            </div>
+          </div>
+
+          <div class="sec-card">
+            <div class="sec-title">
+              <span class="sec-dot" style="background:var(--ds)"></span>
+              Strategy Table
+            </div>
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+              <table style="width:100%;border-collapse:collapse;min-width:600px;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Name</th>
+                    <th style="text-align:left;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Type</th>
+                    <th style="text-align:left;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Instr</th>
+                    <th style="text-align:left;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Status</th>
+                    <th style="text-align:right;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Win%</th>
+                    <th style="text-align:right;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Pts</th>
+                    <th style="text-align:right;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">PF</th>
+                    <th style="text-align:right;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Sig/d</th>
+                    <th style="text-align:right;padding:4px 6px;font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);font-weight:400">Trades</th>
+                  </tr>
+                </thead>
+                <tbody id="ds-algo-tbody">
+                  <tr><td colspan="9" style="text-align:center;padding:16px;color:var(--t4);font-family:var(--fm);font-size:11px">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
     </div><!-- /track -->
   </div><!-- /carousel-viewport -->
 
@@ -599,6 +675,11 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
         <span class="tab-lbl">Risk</span>
       </div>
 
+      <div class="tab-item" data-idx="5" onclick="goTo(5)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <span class="tab-lbl">Algos</span>
+      </div>
+
     </div>
   </div>
 
@@ -627,9 +708,9 @@ async function apiFetch(path) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-var SCREENS = 5;
+var SCREENS = 6;
 var _cur = 0;
-var _loaded = [true, false, false, false, false];
+var _loaded = [true, false, false, false, false, false];
 
 function goTo(idx) {
   if (idx < 0 || idx >= SCREENS) return;
@@ -644,6 +725,7 @@ function goTo(idx) {
     if (idx === 2) loadTrades();
     if (idx === 3) loadModel();
     if (idx === 4) loadRisk();
+    if (idx === 5) loadAlgoPerformance();
   }
 }
 
@@ -1058,5 +1140,6 @@ async function initData() {
 
 document.addEventListener('DOMContentLoaded', function() { initData(); });
 </script>
+<script type="module" src="/dashboard/js/ds/main.js"></script>
 </body>
 </html>
