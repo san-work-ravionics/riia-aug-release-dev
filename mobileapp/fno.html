@@ -545,6 +545,8 @@ function fmtPrice(val, currency) {
   return sym + Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function fmtProb(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
+
 function bdg(text, cls) {
   return '<span class="bdg bdg-' + cls + '">' + esc(text) + '</span>';
 }
@@ -685,8 +687,17 @@ function renderPositions(data) {
 
 // ── Screen 2: Greeks & Margin ────────────────────────────────────────────────
 function renderRisk(data) {
-  var greeks = data.greeks || [];
-  var margin = data.margin || {};
+  var greeks    = data.greeks    || [];
+  var margin    = data.margin    || {};
+  var positions = data.positions || [];
+
+  // Build probMap: keyed by und, populated only when prob_exceed_1s is present
+  var probMap = {};
+  positions.forEach(function(p) {
+    if (p.prob_exceed_1s != null) {
+      probMap[p.und] = { p1: p.prob_exceed_1s, p2: p.prob_exceed_2s, p3: p.prob_exceed_3s };
+    }
+  });
 
   // Aggregate Greeks per underlying
   var byUnd = {};
@@ -710,6 +721,7 @@ function renderRisk(data) {
       var gamma = parseFloat(g.gamma.toFixed(4));
       var theta = Math.round(g.theta);
       var vega  = Math.round(g.vega);
+      var probs = probMap[und];
       return '<div class="greek-block">'
         + '<div class="greek-und-label">' + esc(und) + '</div>'
         + '<div class="sec-card" style="margin:0;">'
@@ -729,6 +741,9 @@ function renderRisk(data) {
             + '<span class="stat-lbl">V&nbsp;Vega</span>'
             + '<span class="stat-val ' + pnlClass(vega) + '">' + fmtPnl(vega) + '</span>'
             + '</div>'
+          + '<div class="stat-row"><span class="stat-lbl">P(1σ) Exceed Prob</span><span class="stat-val neu">' + fmtProb(probs && probs.p1) + '</span></div>'
+          + '<div class="stat-row"><span class="stat-lbl">P(2σ) Exceed Prob</span><span class="stat-val neu">' + fmtProb(probs && probs.p2) + '</span></div>'
+          + '<div class="stat-row"><span class="stat-lbl">P(3σ) Exceed Prob</span><span class="stat-val neu">' + fmtProb(probs && probs.p3) + '</span></div>'
           + '</div>'
         + '</div>';
     }).join('');
