@@ -16,6 +16,10 @@ aws-creds.txt
 !src/rita/schemas/token_forecast.py
 !alembic/versions/a3f9c1e82b5d_add_actual_tokens_total.py
 
+# ── Model artifacts (built by pipeline on EC2, never deployed via git) ────────
+models/**/*.zip
+models/**/training_history.csv
+
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
