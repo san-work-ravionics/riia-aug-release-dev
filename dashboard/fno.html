@@ -1498,24 +1498,18 @@ td.neg{color:var(--neg);font-family:var(--fm);font-weight:500;}
       </div>
     </div>
 
-    <!-- P&L summary — capital, P&L, final value, return -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-capital"><div class="kpi-val">₹15,000</div><div class="kpi-sub">starting capital</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-pnl"><div class="kpi-val">—</div><div class="kpi-sub">total P&L</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-final"><div class="kpi-val">—</div><div class="kpi-sub">final value</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-return"><div class="kpi-val">—</div><div class="kpi-sub">return on capital</div></div>
-    </div>
-    <!-- Trade stats -->
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:12px">
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-winrate"><div class="kpi-val">—</div><div class="kpi-sub">win rate</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-trades"><div class="kpi-val">—</div><div class="kpi-sub">total trades</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-avg"><div class="kpi-val">—</div><div class="kpi-sub">avg per trade</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-target"><div class="kpi-val">—</div><div class="kpi-sub">target hits</div></div>
-      <div class="card" style="text-align:center;padding:16px" id="exp-kpi-sl"><div class="kpi-val">—</div><div class="kpi-sub">stop-loss hits</div></div>
-    </div>
-    <!-- Price source -->
-    <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px">
-      <div class="card" style="text-align:center;padding:12px" id="exp-kpi-source"><div class="kpi-val">—</div><div class="kpi-sub">real price coverage</div></div>
+    <!-- KPI row -->
+    <div style="display:flex;gap:10px;overflow-x:auto;margin-bottom:20px;padding-bottom:4px">
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-capital"><div class="kpi-val">₹15,000</div><div class="kpi-sub">starting capital</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-pnl"><div class="kpi-val">—</div><div class="kpi-sub">total P&L</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-final"><div class="kpi-val">—</div><div class="kpi-sub">final value</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-return"><div class="kpi-val">—</div><div class="kpi-sub">return on capital</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-winrate"><div class="kpi-val">—</div><div class="kpi-sub">win rate</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-trades"><div class="kpi-val">—</div><div class="kpi-sub">total trades</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-avg"><div class="kpi-val">—</div><div class="kpi-sub">avg per trade</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-target"><div class="kpi-val">—</div><div class="kpi-sub">target hits</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-sl"><div class="kpi-val">—</div><div class="kpi-sub">stop-loss hits</div></div>
+      <div class="card" style="flex:1 1 0;min-width:100px;text-align:center;padding:12px" id="exp-kpi-source"><div class="kpi-val">—</div><div class="kpi-sub">real price coverage</div></div>
     </div>
 
     <!-- Cumulative P&L chart -->
