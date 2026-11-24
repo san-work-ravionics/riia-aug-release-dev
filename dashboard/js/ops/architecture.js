@@ -1,8 +1,7 @@
-// ── Architecture Map (groma C4 diagram view) ─────────────────────────────────
+// ── Architecture Map (groma C4 viewer) ───────────────────────────────────────
 import { apiFetch } from './api.js';
 
 let _d = null;
-let _selConId = null;
 
 export async function loadArchitecture() {
   const wrap = document.getElementById('arch-wrap');
@@ -13,129 +12,120 @@ export async function loadArchitecture() {
     wrap.innerHTML = '<div class="empty">Architecture data unavailable — groma/ folder missing or empty.</div>';
     return;
   }
-  _renderDiagram();
+  _render();
 }
 
-function _renderDiagram() {
+function _render() {
   const wrap = document.getElementById('arch-wrap');
   const sys = _d.systems[0];
+  const totalComps = sys.containers.reduce((s, c) => s + c.components.length, 0);
 
-  const actorCards = (_d.actors || []).map(a => `
-    <div class="ac-person">
-      <svg class="ac-person-ic" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-      <div class="ac-person-name">${_esc(a.title)}</div>
-      <div class="ac-person-desc">${_esc(a.description)}</div>
-    </div>`).join('');
+  const conCards = sys.containers.map(con => {
+    const hasComps = con.components.length > 0;
+    return `<div class="card" data-con-id="${con.id}" onclick="selectArchContainer('${con.id}')"
+         style="cursor:pointer;border-left:3px solid ${hasComps ? 'var(--data)' : 'var(--border)'}">
+      <div class="c-ey" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:5px">
+          <span class="ey-d" style="background:${hasComps ? 'var(--data)' : 'var(--t4)'}"></span>Container
+        </span>
+        ${hasComps ? `<span style="color:var(--data);font-weight:600">${con.components.length}</span>` : ''}
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">${_esc(con.title)}</div>
+      ${con.technology ? `<div style="font-family:var(--fm);font-size:9px;color:var(--t4);margin-bottom:7px">${_esc(con.technology)}</div>` : ''}
+      <div style="font-size:11px;color:var(--t2);line-height:1.5">${_esc(con.description)}</div>
+      ${hasComps ? `<div style="margin-top:10px;font-size:10px;color:var(--data);font-weight:600">View components ›</div>` : ''}
+    </div>`;
+  }).join('');
 
-  const conCards = sys.containers.map(con => `
-    <div class="ac-con" data-con-id="${con.id}" onclick="selectArchContainer('${con.id}')">
-      <div class="ac-con-name">${_esc(con.title)}</div>
-      ${con.technology ? `<div class="ac-con-tech">${_esc(con.technology)}</div>` : ''}
-      <div class="ac-con-desc">${_esc(con.description)}</div>
-      ${con.components.length ? `<div class="ac-con-cta">${con.components.length} components ›</div>` : ''}
-    </div>`).join('');
+  const actorRows = (_d.actors || []).map(a =>
+    `<div class="svc-row"><span>${_esc(a.title)}</span>
+     <span style="font-size:10px;color:var(--t3);max-width:60%;text-align:right">${_esc(a.description)}</span></div>`
+  ).join('') || '<div class="empty" style="padding:14px">No actors defined</div>';
 
-  const extCards = (_d.externals || []).map(e => `
-    <div class="ac-ext">
-      <div class="ac-ext-name">${_esc(e.title)}</div>
-      <div class="ac-ext-desc">${_esc(e.description)}</div>
-    </div>`).join('');
+  const extRows = (_d.externals || []).map(e =>
+    `<div class="svc-row"><span>${_esc(e.title)}</span>
+     <span style="font-size:10px;color:var(--t3);max-width:60%;text-align:right">${_esc(e.description)}</span></div>`
+  ).join('') || '<div class="empty" style="padding:14px">No externals defined</div>';
 
   wrap.innerHTML = `
-    <div class="ac-wrap">
-
-      <div class="ac-tier ac-actors-tier">
-        <div class="ac-tier-lbl">Actors</div>
-        <div class="ac-tier-items">${actorCards}</div>
-      </div>
-
-      <div class="ac-connector"><div class="ac-line"></div><div class="ac-arrow-head">▼</div></div>
-
-      <div class="ac-sys-boundary">
-        <div class="ac-sys-label">${_esc(sys.title)}
-          <span class="ac-sys-tag">System</span>
-        </div>
-        <div class="ac-con-grid">${conCards}</div>
-      </div>
-
-      <div class="ac-connector"><div class="ac-line"></div><div class="ac-arrow-head">▼</div></div>
-
-      <div class="ac-tier ac-ext-tier">
-        <div class="ac-tier-lbl">External Systems</div>
-        <div class="ac-tier-items">${extCards}</div>
-      </div>
-
+    <div class="kpi-strip" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="kpi"><div class="kpi-ey">System</div>
+        <div class="kpi-val" style="font-size:16px">${_esc(sys.title)}</div>
+        <div class="kpi-sub">${_esc(sys.description).slice(0, 60)}…</div></div>
+      <div class="kpi"><div class="kpi-ey">Containers</div>
+        <div class="kpi-val ops">${sys.containers.length}</div>
+        <div class="kpi-sub">C4 L2</div></div>
+      <div class="kpi"><div class="kpi-ey">Components</div>
+        <div class="kpi-val ops">${totalComps}</div>
+        <div class="kpi-sub">C4 L3 (FastAPI app)</div></div>
+      <div class="kpi"><div class="kpi-ey">Externals</div>
+        <div class="kpi-val">${(_d.externals || []).length}</div>
+        <div class="kpi-sub">External systems</div></div>
     </div>
 
-    <div class="ac-drill" id="ac-drill" style="display:none">
-      <div id="ac-drill-inner"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:16px" id="arch-con-grid">
+      ${conCards}
+    </div>
+
+    <div id="arch-drill" style="display:none;margin-bottom:16px"></div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="c-ey"><span class="ey-d" style="background:var(--t3)"></span>Actors &amp; Users</div>
+        ${actorRows}
+      </div>
+      <div class="card">
+        <div class="c-ey"><span class="ey-d" style="background:var(--t3)"></span>External Systems</div>
+        ${extRows}
+      </div>
     </div>`;
 }
 
 export function selectArchContainer(conId) {
-  _selConId = conId;
-
-  document.querySelectorAll('.ac-con').forEach(el =>
-    el.classList.toggle('on', el.dataset.conId === conId)
+  document.querySelectorAll('#arch-con-grid .card').forEach(el =>
+    el.style.outline = el.dataset.conId === conId ? '2px solid var(--data)' : ''
   );
 
   const sys = _d.systems[0];
   const con = sys.containers.find(c => c.id === conId);
-  if (!con) return;
-
-  const drill = document.getElementById('ac-drill');
-  const inner = document.getElementById('ac-drill-inner');
+  const drill = document.getElementById('arch-drill');
+  if (!con) { drill.style.display = 'none'; return; }
 
   if (!con.components.length) {
-    _renderConDetail(inner, con);
-  } else {
-    _renderCompGrid(inner, con);
+    drill.style.display = 'block';
+    drill.innerHTML = `<div class="card">
+      <div class="c-ey"><span class="ey-d" style="background:var(--data)"></span>${_esc(con.title)}</div>
+      <div style="font-size:12px;color:var(--t2)">${_esc(con.overview || con.description)}</div>
+    </div>`;
+    drill.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
   }
 
-  drill.style.display = 'block';
-  setTimeout(() => drill.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
-}
-
-function _renderConDetail(inner, con) {
-  inner.innerHTML = `
-    <div class="ac-drill-hdr">
-      <div class="ac-drill-eyebrow">Container · C4 L2</div>
-      <div class="ac-drill-title">${_esc(con.title)}</div>
-      ${con.technology ? `<div class="ac-drill-tech">${_esc(con.technology)}</div>` : ''}
-    </div>
-    <div class="ac-drill-desc">${_esc(con.description)}</div>
-    ${con.overview ? `<div class="ac-drill-body">${_esc(con.overview)}</div>` : ''}`;
-}
-
-function _renderCompGrid(inner, con) {
-  const cards = con.components.map(c => {
-    const relRows = (c.relationships || []).slice(0, 3).map(r => `
-      <div class="ac-rel-row">
-        <span class="ac-rel-src">${_esc(r.source)}</span>
-        <span class="ac-rel-arr">→</span>
-        <span class="ac-rel-tgt">${_esc(r.target)}</span>
-        <span class="ac-rel-desc">${_esc(r.description)}</span>
-      </div>`).join('');
-
-    return `
-      <div class="ac-comp">
-        <div class="ac-comp-name">${_esc(c.title)}</div>
-        <div class="ac-comp-desc">${_esc(c.description)}</div>
-        ${relRows ? `<div class="ac-rels">${relRows}</div>` : ''}
-      </div>`;
+  const compRows = con.components.map(c => {
+    const relItems = (c.relationships || []).slice(0, 2).map(r =>
+      `<span style="font-family:var(--fm);font-size:9px;color:var(--t4)">${_esc(r.source)} → ${_esc(r.target)}</span>`
+    ).join(' &nbsp; ');
+    return `<div style="padding:12px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px">${_esc(c.title)}</div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:6px;line-height:1.4">${_esc(c.description)}</div>
+      ${relItems ? `<div>${relItems}</div>` : ''}
+    </div>`;
   }).join('');
 
-  inner.innerHTML = `
-    <div class="ac-drill-hdr">
-      <div class="ac-drill-eyebrow">Container · C4 L2</div>
-      <div class="ac-drill-title">${_esc(con.title)}</div>
-      ${con.technology ? `<div class="ac-drill-tech">${_esc(con.technology)}</div>` : ''}
-      <div class="ac-drill-cnt">${con.components.length} Components</div>
+  drill.style.display = 'block';
+  drill.innerHTML = `<div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:13px 16px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="c-ey"><span class="ey-d" style="background:var(--data)"></span>Components — ${_esc(con.title)}</div>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--t4)">${_esc(con.technology)}</div>
+      </div>
+      <div style="font-size:11px;color:var(--t3)">${con.components.length} components</div>
     </div>
-    <div class="ac-comp-grid">${cards}</div>`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+      ${compRows}
+    </div>
+  </div>`;
+  setTimeout(() => drill.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 }
 
 function _esc(v) {

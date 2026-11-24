@@ -292,52 +292,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);font-size:13px
 .drift-cell-status.unknown{color:var(--t3);}
 .drift-cell-msg{font-size:10px;color:var(--t3);line-height:1.4;}
 
-/* ── Architecture Map (C4 diagram) ───────────────────────────────────────── */
-.ac-wrap{display:flex;flex-direction:column;align-items:center;gap:0;padding:16px 0;}
-.ac-tier{width:100%;}
-.ac-tier-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:8px;}
-.ac-tier-items{display:flex;flex-wrap:wrap;gap:12px;}
-.ac-person{border:1.5px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--surface);text-align:center;min-width:140px;}
-.ac-person-ic{width:36px;height:36px;display:block;margin:0 auto 8px;color:var(--t2);}
-.ac-person-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
-.ac-person-desc{font-size:10px;color:var(--t3);line-height:1.4;max-width:160px;}
-.ac-connector{display:flex;flex-direction:column;align-items:center;padding:4px 0;color:var(--t4);}
-.ac-line{width:1.5px;height:20px;background:var(--border);}
-.ac-arrow-head{font-size:9px;line-height:1;margin-top:-2px;}
-.ac-sys-boundary{width:100%;border:2px solid var(--data-bd);background:var(--data-bg);border-radius:10px;padding:16px 16px 20px;}
-.ac-sys-label{font-size:11px;font-weight:700;color:var(--data);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-.ac-sys-tag{font-size:9px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);border:1px solid var(--data-bd);border-radius:4px;padding:1px 6px;}
-.ac-con-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.ac-con{background:var(--surface);border:1.5px solid var(--data-bd);border-radius:7px;padding:13px 14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
-.ac-con:hover{border-color:var(--data);box-shadow:0 2px 8px rgba(67,56,202,.1);}
-.ac-con.on{border-color:var(--data);background:white;box-shadow:0 2px 10px rgba(67,56,202,.15);}
-.ac-con-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
-.ac-con-tech{font-family:var(--fm);font-size:9px;color:var(--t4);margin-bottom:6px;}
-.ac-con-desc{font-size:11px;color:var(--t2);line-height:1.4;}
-.ac-con-cta{margin-top:8px;font-size:10px;color:var(--data);font-weight:600;}
-.ac-ext{border:1.5px dashed var(--border);border-radius:8px;padding:12px 14px;background:var(--surface);min-width:140px;}
-.ac-ext-name{font-size:12px;font-weight:700;color:var(--t2);margin-bottom:3px;}
-.ac-ext-desc{font-size:10px;color:var(--t3);line-height:1.4;}
-/* Drill-down panel */
-.ac-drill{margin-top:20px;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;}
-.ac-drill-hdr{background:var(--surface);padding:14px 18px;border-bottom:1.5px solid var(--border);}
-.ac-drill-eyebrow{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t4);margin-bottom:4px;}
-.ac-drill-title{font-size:16px;font-weight:700;color:var(--text);}
-.ac-drill-tech{font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:3px;}
-.ac-drill-cnt{font-size:10px;color:var(--t4);margin-top:6px;}
-.ac-drill-desc{padding:12px 18px;font-size:12px;color:var(--t2);line-height:1.6;}
-.ac-drill-body{padding:0 18px 14px;font-size:11px;color:var(--t3);line-height:1.5;white-space:pre-line;}
-.ac-comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0;padding:4px 0;}
-.ac-comp{padding:14px 18px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
-.ac-comp:last-child{border-bottom:none;}
-.ac-comp-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;}
-.ac-comp-desc{font-size:11px;color:var(--t2);line-height:1.4;margin-bottom:6px;}
-.ac-rels{margin-top:8px;display:flex;flex-direction:column;gap:3px;}
-.ac-rel-row{display:flex;align-items:baseline;gap:4px;font-size:10px;flex-wrap:wrap;}
-.ac-rel-src{color:var(--t3);}
-.ac-rel-arr{color:var(--t4);}
-.ac-rel-tgt{font-weight:600;color:var(--t2);}
-.ac-rel-desc{color:var(--t4);font-style:italic;}
+/* ── Architecture Map — no custom CSS; uses existing .card .kpi .g2 patterns ─ */
 </style>
 <link rel="stylesheet" href="css/responsive.css">
 </head>
