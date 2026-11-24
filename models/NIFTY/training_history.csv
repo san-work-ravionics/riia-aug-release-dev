@@ -54,3 +54,6 @@ round,timestamp,timesteps,source,val_sharpe,val_mdd_pct,val_cagr_pct,val_constra
 53,2026-10-28 20:28:42,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=f367282b
 54,2026-10-28 20:55:00,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=912b8de1
 55,2026-10-28 21:09:39,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=36d2eab2
+56,2026-11-15 09:43:50,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=f0001da9
+57,2026-11-15 15:15:23,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=0421d44c
+58,2026-11-15 16:31:00,1000,trained,1.42,-12.0,28.0,False,1.42,-12.0,28.0,28.0,0,False,run_id=6ed42b1d

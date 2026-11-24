@@ -1,0 +1,39 @@
+{
+  "run_id": "20261115-1800",
+  "app": "rita",
+  "request": "Investigate and fix v2.0.9 deployment failure (F48 CI); retrain JIOFIN/ZEEL at 200K steps; fetch NSE bhav data through 2026-11-13",
+  "skill_file": "n/a",
+  "agents": [
+    {
+      "role": "engineer",
+      "status": "pass",
+      "steps_required": 4,
+      "steps_completed": 4,
+      "adherence_score": 1.0,
+      "token_estimate": 800,
+      "grounding_checks": {
+        "branch_created": false,
+        "code_changed": true,
+        "spec_updated": false,
+        "ruff_passed": true,
+        "contract_matches_architect": true
+      },
+      "failure_modes": [],
+      "notes": "CI fix: algos.js (new F48 module) used copy.js?v=22 while 11 other Jarvis modules still on v=21; bumped all to v=22 and added algos.js to test_all_design_modules_present. Commit c55cd5f, deployed as v2.0.9. JIOFIN retrain: val_sharpe=-0.165/backtest=0.624 — below gate, left as-is. ZEEL retrain: val_sharpe=0.096/backtest=-0.87 — below gate, left as-is. NSE bhav fetch: 38 new trading days, 72195 rows, through 2026-11-13; prod seed deferred."
+    }
+  ],
+  "overall_status": "pass",
+  "total_tokens_estimated": 800,
+  "duration_minutes": 35,
+  "branch": "master",
+  "merge_status": "merged",
+  "merge_commit": "c55cd5f",
+  "human_score": {
+    "accuracy": 3,
+    "relevance": 4,
+    "csat": 3,
+    "planning_ok": true,
+    "time_saved_hours": 8,
+    "notes": ""
+  }
+}

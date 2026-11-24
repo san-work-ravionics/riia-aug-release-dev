@@ -1,22 +1,22 @@
 {
-  "generated_at": "2026-11-15T14:58:55",
-  "total_runs": 41,
+  "generated_at": "2026-11-15T19:52:15",
+  "total_runs": 42,
   "status_counts": {
     "pass_with_warnings": 19,
-    "pass": 22
+    "pass": 23
   },
   "app_counts": {
     "rl": 2,
-    "rita": 15,
+    "rita": 16,
     "ops": 3,
     "fno": 16,
     "core": 3,
     "ds": 2
   },
-  "total_estimated_tokens": 10178400,
+  "total_estimated_tokens": 10179200,
   "total_actual_tokens": 12099044,
-  "total_duration_minutes": 4420,
-  "avg_duration_minutes": 107.8,
+  "total_duration_minutes": 4455,
+  "avg_duration_minutes": 106.1,
   "per_agent": {
     "pm": {
       "runs": 26,
@@ -50,9 +50,9 @@
       }
     },
     "engineer": {
-      "runs": 38,
-      "avg_adherence": 0.975,
-      "total_estimated_tokens": 3628200,
+      "runs": 39,
+      "avg_adherence": 0.976,
+      "total_estimated_tokens": 3629000,
       "total_actual_tokens": 2610063,
       "token_overrun_ratio": 0.72,
       "top_failure_modes": {
