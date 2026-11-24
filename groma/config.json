@@ -1,0 +1,14 @@
+{
+  "scanners": [],
+  "exclude": [
+    "**/__pycache__/",
+    "**/*.pyc",
+    "**/*.pyo",
+    "/tests/",
+    "/.venv/",
+    "/models/",
+    "/data/",
+    "/docs/",
+    "/migrations/"
+  ]
+}

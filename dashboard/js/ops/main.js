@@ -4,6 +4,7 @@ import { loadOverview } from './overview.js';
 import { loadMonitoring } from './monitoring.js';
 import { loadDeploy } from './deploy.js';
 import { loadObservability } from './observability.js';
+import { loadArchitecture, selectArchNode } from './architecture.js';
 import { loadChat } from './chat.js';
 import { loadDailyOps, triggerSnapshot, loadInstruments, toggleInstrument, saveInstruments, searchInstrument, onboardInstrument } from './daily-ops.js';
 import { loadRisk } from './risk.js';
@@ -31,6 +32,7 @@ sectionLoaders['risk']                 = () => { loadRisk(); loadDailyOps(); loa
 sectionLoaders['users']                = loadUsers;
 sectionLoaders['agent-builds']         = loadAgentBuilds;
 sectionLoaders['game-compliance']      = loadGameCompliance;
+sectionLoaders['architecture']         = loadArchitecture;
 
 // ── Window bindings for inline onclick= attributes ────────────────────────────
 window.nav                    = nav;
@@ -57,6 +59,7 @@ window.runFullPipeline        = runFullPipeline;
 window.doReset                = doReset;
 window.filterApiMetrics       = filterApiMetrics;
 window.setLanguage            = setLanguage;
+window.selectArchNode         = selectArchNode;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 initI18n(); applyTranslations();

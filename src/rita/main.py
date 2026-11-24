@@ -93,6 +93,7 @@ from rita.api.experience.fx import router as fx_router
 from rita.api.v1.workflow.jarvis import router as jarvis_workflow_router
 from rita.api.experience.jarvis import router as jarvis_experience_router
 from rita.api.v1.system.algos import router as algos_system_router
+from rita.api.v1.system.architecture import router as architecture_router
 from rita.api.v1.workflow.algos import router as algos_workflow_router
 
 _MOBILE_UA_RE = re.compile(r"Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini", re.IGNORECASE)
@@ -454,6 +455,7 @@ app.include_router(experiment_backtest_router)
 app.include_router(fx_router)
 app.include_router(jarvis_experience_router)  # F44 P4 A4–A6 (read-only; get_current_user)
 app.include_router(algos_system_router)       # F46 Algo system CRUD (internal base layer)
+app.include_router(architecture_router)       # groma C4 architecture map (filesystem read)
 app.include_router(algos_workflow_router)     # F46 Algo workflow mutations (JS-callable)
 
 # -- Chat -- local intent classifier + OHLCV dispatch (no external API) -------
