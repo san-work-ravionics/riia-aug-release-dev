@@ -1,37 +1,37 @@
 {
-  "generated_at": "2026-11-15T19:52:15",
-  "total_runs": 42,
+  "generated_at": "2026-11-24T11:44:17",
+  "total_runs": 44,
   "status_counts": {
-    "pass_with_warnings": 19,
+    "pass_with_warnings": 21,
     "pass": 23
   },
   "app_counts": {
     "rl": 2,
     "rita": 16,
     "ops": 3,
-    "fno": 16,
+    "fno": 17,
     "core": 3,
-    "ds": 2
+    "ds": 3
   },
-  "total_estimated_tokens": 10179200,
-  "total_actual_tokens": 12099044,
-  "total_duration_minutes": 4455,
-  "avg_duration_minutes": 106.1,
+  "total_estimated_tokens": 10949200,
+  "total_actual_tokens": 12961159,
+  "total_duration_minutes": 4567,
+  "avg_duration_minutes": 103.8,
   "per_agent": {
     "pm": {
-      "runs": 26,
+      "runs": 28,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 810000,
-      "total_actual_tokens": 631368,
-      "token_overrun_ratio": 0.78,
+      "total_estimated_tokens": 880000,
+      "total_actual_tokens": 707433,
+      "token_overrun_ratio": 0.8,
       "top_failure_modes": {}
     },
     "architect": {
-      "runs": 27,
+      "runs": 29,
       "avg_adherence": 0.993,
-      "total_estimated_tokens": 770000,
-      "total_actual_tokens": 874845,
-      "token_overrun_ratio": 1.14,
+      "total_estimated_tokens": 830000,
+      "total_actual_tokens": 994062,
+      "token_overrun_ratio": 1.2,
       "top_failure_modes": {
         "design 1 rule-based (rejected by user: 'Its a model based approach not a rule based approach')": 1,
         "paths-correction-needed-riia-jun-to-aug": 1,
@@ -39,22 +39,22 @@
       }
     },
     "design_reviewer": {
-      "runs": 26,
+      "runs": 28,
       "avg_adherence": 1.0,
-      "total_estimated_tokens": 684000,
-      "total_actual_tokens": 674771,
-      "token_overrun_ratio": 0.99,
+      "total_estimated_tokens": 744000,
+      "total_actual_tokens": 751250,
+      "token_overrun_ratio": 1.01,
       "top_failure_modes": {
         "DR-001": 1,
         "DR-004-frozen-repo-paths-pass1": 1
       }
     },
     "engineer": {
-      "runs": 39,
-      "avg_adherence": 0.976,
-      "total_estimated_tokens": 3629000,
-      "total_actual_tokens": 2610063,
-      "token_overrun_ratio": 0.72,
+      "runs": 41,
+      "avg_adherence": 0.972,
+      "total_estimated_tokens": 3809000,
+      "total_actual_tokens": 2772700,
+      "token_overrun_ratio": 0.73,
       "top_failure_modes": {
         "FC-LINT: unused import shipped, caught by CI ruff gate": 1,
         "FC-COV: new 538-line module shipped without coverage omit entry": 1,
@@ -64,32 +64,33 @@
       }
     },
     "code_reviewer": {
-      "runs": 24,
+      "runs": 26,
       "avg_adherence": 0.99,
-      "total_estimated_tokens": 1416000,
-      "total_actual_tokens": 1523820,
-      "token_overrun_ratio": 1.08,
+      "total_estimated_tokens": 1556000,
+      "total_actual_tokens": 1698659,
+      "token_overrun_ratio": 1.09,
       "top_failure_modes": {
-        "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1
+        "CR-WORKTREE-FALSE-POSITIVE: spec blocking findings overridden \u2014 specs confirmed present in worktree branch": 1,
+        "CR-004": 1
       }
     },
     "qa": {
-      "runs": 25,
-      "avg_adherence": 0.97,
-      "total_estimated_tokens": 1675000,
-      "total_actual_tokens": 2016959,
-      "token_overrun_ratio": 1.2,
+      "runs": 27,
+      "avg_adherence": 0.972,
+      "total_estimated_tokens": 1825000,
+      "total_actual_tokens": 2126714,
+      "token_overrun_ratio": 1.17,
       "top_failure_modes": {
         "FC-004": 2,
         "No unit tests \u2014 no RITA backend code to test (external middleware)": 1
       }
     },
     "techwriter": {
-      "runs": 24,
-      "avg_adherence": 0.876,
-      "total_estimated_tokens": 1180000,
-      "total_actual_tokens": 1162263,
-      "token_overrun_ratio": 0.98,
+      "runs": 26,
+      "avg_adherence": 0.886,
+      "total_estimated_tokens": 1290000,
+      "total_actual_tokens": 1305386,
+      "token_overrun_ratio": 1.01,
       "top_failure_modes": {
         "Confluence key not present in aug workspace": 1
       }
